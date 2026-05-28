@@ -15,8 +15,14 @@ export interface VisionResult {
   street: string | null; // "preflop" | "flop" | "turn" | "river"
   dealerSeat: number | null;
   seats: DetectedSeat[];
+  smallBlind: number | null;
+  bigBlind: number | null;
+  ante: number | null;
+  clockSeconds: number | null; // tournament level clock, if shown
+  heroToAct: boolean; // is it the hero's turn to act
   notes: string;
 }
+
 
 const VALID_ACTIONS: ActionType[] = ["fold", "check", "call", "bet", "raise", "allin"];
 
