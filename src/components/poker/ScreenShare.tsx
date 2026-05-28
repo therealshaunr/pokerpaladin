@@ -7,17 +7,15 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MonitorUp, ScanEye, X, Radio } from "lucide-react";
 
-const DIFF_W = 64;
-const DIFF_H = 36;
-const POLL_MS = 1200; // how often we look for a change
-const DIFF_THRESHOLD = 9; // mean per-pixel change (0-255) that counts as "something happened"
+const POLL_MS = 5000; // re-scan the table every 5 seconds while LIVE
+
+
 
 export function ScreenShare({ game }: { game: GameApi }) {
   const { variant, setHero, setBoard, setPot, setToCall, syncFromVision, syncMeta } = game;
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const lastFrameRef = useRef<Uint8ClampedArray | null>(null);
   const busyRef = useRef(false);
   const [sharing, setSharing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -48,7 +46,6 @@ export function ScreenShare({ game }: { game: GameApi }) {
   const stopShare = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    lastFrameRef.current = null;
     setSharing(false);
     setLive(false);
     setStatus("");
@@ -68,28 +65,6 @@ export function ScreenShare({ game }: { game: GameApi }) {
     return canvas.toDataURL("image/jpeg", 0.7);
   };
 
-  // tiny grayscale fingerprint for local change-detection (no AI cost)
-  const grabFingerprint = (): Uint8ClampedArray | null => {
-    const v = videoRef.current;
-    if (!v || !v.videoWidth) return null;
-    const canvas = document.createElement("canvas");
-    canvas.width = DIFF_W;
-    canvas.height = DIFF_H;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return null;
-    ctx.drawImage(v, 0, 0, DIFF_W, DIFF_H);
-    return ctx.getImageData(0, 0, DIFF_W, DIFF_H).data;
-  };
-
-  const meanDiff = (a: Uint8ClampedArray, b: Uint8ClampedArray): number => {
-    let sum = 0;
-    for (let i = 0; i < a.length; i += 4) {
-      const ga = (a[i] + a[i + 1] + a[i + 2]) / 3;
-      const gb = (b[i] + b[i + 1] + b[i + 2]) / 3;
-      sum += Math.abs(ga - gb);
-    }
-    return sum / (a.length / 4);
-  };
 
   const runAnalyze = async (reason: string) => {
     const image = grabFrame();
@@ -117,6 +92,7 @@ export function ScreenShare({ game }: { game: GameApi }) {
       const holeCards = toCards(res.hole, variant.holeCount);
       const boardCards = variant.community ? toCards(res.board, variant.boardSize) : [];
       if (holeCards.length) setHero(holeCards);
+      if (variant.community) setBoard(boardCards); // always sync the board (clears on a new hand)
       if (typeof res.pot === "number") setPot(res.pot);
       if (typeof res.toCall === "number") setToCall(res.toCall);
       if (res.seats.length) syncFromVision(res.seats, res.dealerSeat);
@@ -128,12 +104,12 @@ export function ScreenShare({ game }: { game: GameApi }) {
         heroToAct: res.heroToAct,
       });
 
-      if (res.seats.length) syncFromVision(res.seats, res.dealerSeat);
       setLastRead(
         `${holeCards.length} hole · ${boardCards.length} board · ${res.seats.length} seats` +
           (res.notes ? ` — ${res.notes}` : "")
       );
       setStatus(`Updated ${new Date().toLocaleTimeString()}.`);
+
     } catch (e) {
       setStatus(e instanceof Error ? e.message : "Vision failed.");
       setLive(false); // stop hammering on errors (rate limit / credits)
@@ -143,20 +119,16 @@ export function ScreenShare({ game }: { game: GameApi }) {
     }
   };
 
-  // LIVE loop: poll a cheap fingerprint, only call AI when the table changed
+  // LIVE loop: re-scan the table every 5 seconds to stay current
   useEffect(() => {
     if (!live || !sharing) return;
     const id = setInterval(() => {
       if (busyRef.current) return;
-      const fp = grabFingerprint();
-      if (!fp) return;
-      const prev = lastFrameRef.current;
-      const changed = !prev || meanDiff(prev, fp) > DIFF_THRESHOLD;
-      if (changed) {
-        lastFrameRef.current = fp;
-        runAnalyze(prev ? "table changed" : "first read");
-      }
+      runAnalyze("auto refresh");
     }, POLL_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, sharing]);
