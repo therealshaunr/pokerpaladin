@@ -68,6 +68,8 @@ export function useGame() {
   const [clockOn, setClockOn] = useState(false); // off unless a clock is detected or user toggles it
 
   const schedule = useMemo(() => buildSchedule(config), [config]);
+  const blind = schedule[Math.min(levelIdx, schedule.length - 1)];
+
   useEffect(() => {
     if (!started || !clockOn) return;
     const t = setInterval(() => {
