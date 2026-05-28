@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GameApi } from "@/lib/poker/useGame";
 import { decide, readProfile, fieldLooseness, type Decision } from "@/lib/poker/strategy";
 import { Button } from "@/components/ui/button";
@@ -15,13 +15,44 @@ const VERDICT_STYLE: Record<string, string> = {
   Shove: "bg-[oklch(0.58_0.22_27)] text-white",
 };
 
+// Turn a Decision into a short, loud instruction for the WHAT TO DO panel.
+function whatToDo(d: Decision, pot: number): string {
+  switch (d.verdict) {
+    case "Fold":
+      return "FOLD";
+    case "Check":
+      return "CHECK";
+    case "Call":
+      return "CALL";
+    case "Shove":
+      return "ALL IN";
+    case "Bet":
+    case "Raise": {
+      const size = d.suggestedSize ?? 0;
+      if (!size) return d.verdict.toUpperCase();
+      const frac = pot > 0 ? size / pot : 0;
+      let label = `${size}`;
+      if (frac >= 0.95 && frac <= 1.15) label = `FULL POT (${size})`;
+      else if (frac >= 0.7) label = `3/4 POT (${size})`;
+      else if (frac >= 0.4) label = `1/2 POT (${size})`;
+      else label = `${size}`;
+      return `${d.verdict.toUpperCase()} ${label}`;
+    }
+  }
+}
+
+
 export function Recommendation({ game, street }: { game: GameApi; street: string }) {
-  const { variant, hero, board, pot, toCall, setPot, setToCall, blind, heroSeat, activeOpponents, profiles, config } = game;
+  const { variant, hero, board, pot, toCall, setPot, setToCall, blind, heroSeat, activeOpponents, profiles, config, heroToAct } = game;
   const [result, setResult] = useState<Decision | null>(null);
   const [busy, setBusy] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
 
+  const minHole = variant.holeCount === 7 ? 2 : variant.holeCount;
+  const ready = hero.length >= Math.min(2, minHole);
+
   const run = () => {
+    if (!ready) return;
     setBusy(true);
     // let the button paint, then crunch
     setTimeout(() => {
@@ -42,8 +73,15 @@ export function Recommendation({ game, street }: { game: GameApi; street: string
     }, 10);
   };
 
-  const minHole = variant.holeCount === 7 ? 2 : variant.holeCount;
-  const ready = hero.length >= Math.min(2, minHole);
+  // Auto-surface the play the moment it's the hero's turn.
+  const wasHeroToAct = useRef(false);
+  useEffect(() => {
+    if (heroToAct && !wasHeroToAct.current && ready && !busy) {
+      run();
+    }
+    wasHeroToAct.current = heroToAct;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heroToAct, ready]);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -56,6 +94,29 @@ export function Recommendation({ game, street }: { game: GameApi; street: string
           To call
           <Input type="number" value={toCall} onChange={(e) => setToCall(Number(e.target.value))} className="mt-1 h-8" />
         </label>
+      </div>
+
+      {/* WHAT TO DO — big red call-out, front and center */}
+      <div
+        className={cn(
+          "mt-3 rounded-xl border-2 p-3 text-center transition",
+          result
+            ? "border-[oklch(0.58_0.24_27)] bg-[oklch(0.2_0.08_27)]"
+            : "border-border bg-secondary/20"
+        )}
+      >
+        <div className="font-data text-[10px] font-bold uppercase tracking-[0.3em] text-[oklch(0.7_0.2_27)]">
+          What to do
+        </div>
+        {result ? (
+          <div className="font-display text-3xl font-black uppercase leading-tight text-[oklch(0.68_0.24_27)] drop-shadow-[0_0_12px_oklch(0.58_0.24_27/0.5)]">
+            {whatToDo(result, pot)}
+          </div>
+        ) : (
+          <div className="font-display text-lg font-bold text-muted-foreground">
+            {heroToAct ? "Reading…" : "Waiting for your turn"}
+          </div>
+        )}
       </div>
 
       <Button onClick={run} disabled={!ready || busy} className="mt-3 w-full gap-2">

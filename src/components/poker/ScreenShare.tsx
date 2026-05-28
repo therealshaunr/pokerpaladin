@@ -13,7 +13,8 @@ const POLL_MS = 1200; // how often we look for a change
 const DIFF_THRESHOLD = 9; // mean per-pixel change (0-255) that counts as "something happened"
 
 export function ScreenShare({ game }: { game: GameApi }) {
-  const { variant, setHero, setBoard, setPot, setToCall, syncFromVision } = game;
+  const { variant, setHero, setBoard, setPot, setToCall, syncFromVision, syncMeta } = game;
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const lastFrameRef = useRef<Uint8ClampedArray | null>(null);
@@ -34,8 +35,11 @@ export function ScreenShare({ game }: { game: GameApi }) {
         await videoRef.current.play();
       }
       setSharing(true);
-      setStatus("Screen connected. Flip on LIVE and the engine watches the table.");
+      setStatus("Screen connected — running first scan to fill the table…");
       stream.getVideoTracks()[0].addEventListener("ended", stopShare);
+      // auto deal-in scan: fill stacks, blinds, level, clock, cards once a frame exists
+      setTimeout(() => runAnalyze("deal-in scan"), 1200);
+
     } catch {
       setStatus("Screen share was cancelled or blocked.");
     }
@@ -113,9 +117,17 @@ export function ScreenShare({ game }: { game: GameApi }) {
       const holeCards = toCards(res.hole, variant.holeCount);
       const boardCards = variant.community ? toCards(res.board, variant.boardSize) : [];
       if (holeCards.length) setHero(holeCards);
-      if (boardCards.length) setBoard(boardCards);
       if (typeof res.pot === "number") setPot(res.pot);
       if (typeof res.toCall === "number") setToCall(res.toCall);
+      if (res.seats.length) syncFromVision(res.seats, res.dealerSeat);
+      syncMeta({
+        smallBlind: res.smallBlind,
+        bigBlind: res.bigBlind,
+        ante: res.ante,
+        clockSeconds: res.clockSeconds,
+        heroToAct: res.heroToAct,
+      });
+
       if (res.seats.length) syncFromVision(res.seats, res.dealerSeat);
       setLastRead(
         `${holeCards.length} hole · ${boardCards.length} board · ${res.seats.length} seats` +

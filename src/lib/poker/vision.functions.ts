@@ -15,8 +15,14 @@ export interface VisionResult {
   street: string | null; // "preflop" | "flop" | "turn" | "river"
   dealerSeat: number | null;
   seats: DetectedSeat[];
+  smallBlind: number | null;
+  bigBlind: number | null;
+  ante: number | null;
+  clockSeconds: number | null; // tournament level clock, if shown
+  heroToAct: boolean; // is it the hero's turn to act
   notes: string;
 }
+
 
 const VALID_ACTIONS: ActionType[] = ["fold", "check", "call", "bet", "raise", "allin"];
 
@@ -59,7 +65,8 @@ function parseSeats(arr: unknown): DetectedSeat[] {
 
 function safeParse(text: string): VisionResult {
   const empty: VisionResult = {
-    hole: [], board: [], pot: null, toCall: null, street: null, dealerSeat: null, seats: [], notes: "",
+    hole: [], board: [], pot: null, toCall: null, street: null, dealerSeat: null, seats: [],
+    smallBlind: null, bigBlind: null, ante: null, clockSeconds: null, heroToAct: false, notes: "",
   };
   if (!text) return empty;
   const match = text.match(/\{[\s\S]*\}/);
@@ -74,12 +81,18 @@ function safeParse(text: string): VisionResult {
       street: typeof obj.street === "string" ? obj.street.toLowerCase() : null,
       dealerSeat: toNum(obj.dealerSeat),
       seats: parseSeats(obj.seats),
+      smallBlind: toNum(obj.smallBlind),
+      bigBlind: toNum(obj.bigBlind),
+      ante: toNum(obj.ante),
+      clockSeconds: toNum(obj.clockSeconds),
+      heroToAct: obj.heroToAct === true,
       notes: typeof obj.notes === "string" ? obj.notes : "",
     };
   } catch {
     return { ...empty, notes: "Could not parse vision output." };
   }
 }
+
 
 export const analyzeTable = createServerFn({ method: "POST" })
   .inputValidator((input: VisionInput) => {
@@ -97,7 +110,8 @@ export const analyzeTable = createServerFn({ method: "POST" })
       `Report ONLY what is clearly visible. Return STRICT JSON (no prose, no markdown) in exactly this shape:\n` +
       `{"hole":["As","Kd"],"board":["Th","9s","2c"],"pot":1234,"toCall":200,"street":"flop","dealerSeat":3,` +
       `"seats":[{"seat":1,"name":"username","stack":1500,"hasCards":true,"isHero":false,"isEmpty":false,"action":"raise","betAmount":120}],` +
-      `"notes":"short read"}\n` +
+      `"smallBlind":10,"bigBlind":20,"ante":0,"clockSeconds":214,"heroToAct":true,"notes":"short read"}\n` +
+
       `Card format: rank A K Q J T 9 8 7 6 5 4 3 2 + suit s h d c (e.g. "Qh"). ` +
       `hole = the hero's own cards. board = community cards (empty array for stud). ` +
       `seats = EVERY visible seat going clockwise starting top-left; number them 1..N by screen position. ` +
@@ -107,7 +121,11 @@ export const analyzeTable = createServerFn({ method: "POST" })
       `action (the most recent visible action this betting round: fold/check/call/bet/raise/allin, or null), ` +
       `betAmount (chips committed with that action, or null). ` +
       `street = preflop/flop/turn/river based on community cards. dealerSeat = seat with the dealer button. ` +
+      `smallBlind/bigBlind/ante = the blinds and ante currently in play (read from blinds display or what's posted). ` +
+      `clockSeconds = the tournament level countdown clock converted to total seconds (e.g. "3:34" -> 214), or null if no clock is visible. ` +
+      `heroToAct = true ONLY if it is clearly the hero's turn to act (their seat is highlighted / action is on them). ` +
       `Use [] for unknown arrays and null for unknown numbers. ` +
+
       (data.heroSeatHint ? `Hero seat hint: ${data.heroSeatHint}. ` : "");
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

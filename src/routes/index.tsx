@@ -61,10 +61,13 @@ function Index() {
           </div>
         </header>
 
-        {/* Centerpiece: live poker table */}
-        <PokerTable game={game} street={street} />
+        {/* Centerpiece: live poker table + live reader, side by side */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <PokerTable game={game} street={street} />
+          <ScreenShare game={game} />
+        </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-2">
           {/* Left: your hand + blinds */}
           <div className="space-y-4">
             <BlindTimer game={game} />
@@ -76,17 +79,13 @@ function Index() {
             </div>
           </div>
 
-          {/* Middle: math */}
+          {/* Right: math + what to do */}
           <div className="space-y-4">
             <Recommendation game={game} street={street} />
-          </div>
-
-          {/* Right: live reader */}
-          <div className="space-y-4">
-            <ScreenShare game={game} />
           </div>
         </div>
       </div>
     </div>
   );
 }
+

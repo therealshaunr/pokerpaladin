@@ -1,5 +1,6 @@
 import type { GameApi } from "@/lib/poker/useGame";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Clock } from "lucide-react";
 
 function fmt(s: number) {
@@ -9,7 +10,7 @@ function fmt(s: number) {
 }
 
 export function BlindTimer({ game }: { game: GameApi }) {
-  const { blind, secondsLeft, levelIdx, schedule, setLevelIdx } = game;
+  const { blind, secondsLeft, levelIdx, schedule, setLevelIdx, clockOn, setClockOn } = game;
   const nextAnte = schedule[Math.min(levelIdx + 1, schedule.length - 1)]?.ante ?? 0;
 
   return (
@@ -18,8 +19,14 @@ export function BlindTimer({ game }: { game: GameApi }) {
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Clock className="h-4 w-4" /> Level {levelIdx + 1}
         </div>
-        <div className="font-mono text-2xl font-bold tabular-nums text-primary">{fmt(secondsLeft)}</div>
+        <div className="flex items-center gap-2">
+          <span className={`font-mono text-2xl font-bold tabular-nums ${clockOn ? "text-primary" : "text-muted-foreground/50"}`}>
+            {fmt(secondsLeft)}
+          </span>
+          <Switch checked={clockOn} onCheckedChange={setClockOn} aria-label="Toggle clock" />
+        </div>
       </div>
+
       <div className="mt-2 flex items-end justify-between">
         <div>
           <div className="text-2xl font-bold">

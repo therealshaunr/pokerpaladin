@@ -59,17 +59,22 @@ function load<T>(k: string, fallback: T): T {
 
 export function useGame() {
   const [config, setConfig] = useState<GameConfig>(() => load(CONFIG_KEY, DEFAULT_CONFIG));
+  const configRef = useRef(config);
+  configRef.current = config;
   const [started, setStarted] = useState(false);
+
   const variant = VARIANTS[config.variantId];
 
   // Blind level + timer
   const [levelIdx, setLevelIdx] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(config.levelMinutes * 60);
+  const [clockOn, setClockOn] = useState(false); // off unless a clock is detected or user toggles it
+
   const schedule = useMemo(() => buildSchedule(config), [config]);
   const blind = schedule[Math.min(levelIdx, schedule.length - 1)];
 
   useEffect(() => {
-    if (!started) return;
+    if (!started || !clockOn) return;
     const t = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
@@ -80,7 +85,8 @@ export function useGame() {
       });
     }, 1000);
     return () => clearInterval(t);
-  }, [started, config.levelMinutes, schedule.length]);
+  }, [started, clockOn, config.levelMinutes, schedule.length]);
+
 
   // Players
   const [players, setPlayers] = useState<SeatPlayer[]>([]);
@@ -133,6 +139,39 @@ export function useGame() {
   const lastHasCards = useRef<Record<number, boolean>>({});
   const [liveSeats, setLiveSeats] = useState<Record<number, DetectedSeat>>({});
   const [dealerSeat, setDealerSeat] = useState<number | null>(null);
+  const [heroToAct, setHeroToAct] = useState(false);
+
+  // Map detected blinds onto the schedule + sync clock from a vision read.
+  const syncMeta = useCallback(
+    (meta: {
+      smallBlind: number | null;
+      bigBlind: number | null;
+      ante: number | null;
+      clockSeconds: number | null;
+      heroToAct: boolean;
+    }) => {
+      setHeroToAct(meta.heroToAct);
+      if (meta.bigBlind && meta.bigBlind > 0) {
+        const sched = buildSchedule(configRef.current);
+        let best = 0;
+        let bestDiff = Infinity;
+        sched.forEach((lvl, i) => {
+          const d = Math.abs(lvl.bb - meta.bigBlind!);
+          if (d < bestDiff) {
+            bestDiff = d;
+            best = i;
+          }
+        });
+        setLevelIdx(best);
+      }
+      if (meta.clockSeconds != null && meta.clockSeconds > 0) {
+        setSecondsLeft(meta.clockSeconds);
+        setClockOn(true); // a clock is present — sync and run it
+      }
+    },
+    []
+  );
+
 
   const start = useCallback(
     (cfg: GameConfig) => {
@@ -330,11 +369,13 @@ export function useGame() {
   return {
     config, setConfig, started, start, variant,
     schedule, levelIdx, blind, secondsLeft, setLevelIdx,
+    clockOn, setClockOn,
     players, setPlayers, activeOpponents, heroSeat: hero_,
     hero, setHero, board, setBoard, pot, setPot, toCall, setToCall,
     profiles, logAction, setNote, resetProfiles, newHand,
-    syncFromVision, liveSeats, dealerSeat,
+    syncFromVision, syncMeta, liveSeats, dealerSeat, heroToAct,
   };
 }
+
 
 export type GameApi = ReturnType<typeof useGame>;
