@@ -121,7 +121,11 @@ export const analyzeTable = createServerFn({ method: "POST" })
       `action (the most recent visible action this betting round: fold/check/call/bet/raise/allin, or null), ` +
       `betAmount (chips committed with that action, or null). ` +
       `street = preflop/flop/turn/river based on community cards. dealerSeat = seat with the dealer button. ` +
+      `smallBlind/bigBlind/ante = the blinds and ante currently in play (read from blinds display or what's posted). ` +
+      `clockSeconds = the tournament level countdown clock converted to total seconds (e.g. "3:34" -> 214), or null if no clock is visible. ` +
+      `heroToAct = true ONLY if it is clearly the hero's turn to act (their seat is highlighted / action is on them). ` +
       `Use [] for unknown arrays and null for unknown numbers. ` +
+
       (data.heroSeatHint ? `Hero seat hint: ${data.heroSeatHint}. ` : "");
 
     const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
