@@ -5,7 +5,7 @@ import { cardKey } from "@/lib/poker/types";
 import { GameSetup } from "@/components/poker/GameSetup";
 import { BlindTimer } from "@/components/poker/BlindTimer";
 import { CardPicker } from "@/components/poker/CardPicker";
-import { OpponentPanel } from "@/components/poker/OpponentPanel";
+import { PokerTable } from "@/components/poker/PokerTable";
 import { Recommendation } from "@/components/poker/Recommendation";
 import { ScreenShare } from "@/components/poker/ScreenShare";
 import { Button } from "@/components/ui/button";
