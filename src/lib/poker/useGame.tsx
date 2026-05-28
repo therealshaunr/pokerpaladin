@@ -3,6 +3,7 @@ import {
   type ActionType,
   type BlindLevel,
   type Card,
+  type DetectedSeat,
   type OpponentProfile,
   type VariantId,
   VARIANTS,
@@ -83,6 +84,8 @@ export function useGame() {
 
   // Players
   const [players, setPlayers] = useState<SeatPlayer[]>([]);
+  const playersRef = useRef<SeatPlayer[]>([]);
+  playersRef.current = players;
   const initPlayers = useCallback((cfg: GameConfig) => {
     const list: SeatPlayer[] = [];
     for (let i = 0; i < cfg.numPlayers; i++) {
@@ -122,9 +125,14 @@ export function useGame() {
     src[name] ?? {
       name, hands: 0, vpipHands: 0, pfrHands: 0, aggressive: 0, passive: 0, folds: 0, notes: "",
     };
-
   // Track which players already counted VPIP/PFR this hand.
   const handFlags = useRef<{ vpip: Set<string>; pfr: Set<string> }>({ vpip: new Set(), pfr: new Set() });
+
+  // Vision reconciliation memory: dedup repeated actions + detect a new deal.
+  const lastActionSig = useRef<Record<string, string>>({});
+  const lastHasCards = useRef<Record<number, boolean>>({});
+  const [liveSeats, setLiveSeats] = useState<Record<number, DetectedSeat>>({});
+  const [dealerSeat, setDealerSeat] = useState<number | null>(null);
 
   const start = useCallback(
     (cfg: GameConfig) => {
@@ -220,6 +228,102 @@ export function useGame() {
 
   const resetProfiles = useCallback(() => persistProfiles({}), [persistProfiles]);
 
+  /**
+   * Reconcile a vision snapshot with tracked players:
+   *  - locks seats by screen position (seat index)
+   *  - "no cards = folded" (strict for the current hand)
+   *  - cards reappearing on a folded/empty seat => new deal (reset fold flags)
+   *  - empty seats retire; a new username at a seat registers fresh analytics
+   *  - dedups repeated actions across frames so stats aren't double-counted
+   */
+  const syncFromVision = useCallback(
+    (seats: DetectedSeat[], dealer: number | null) => {
+      if (!seats.length) return;
+      if (dealer != null) setDealerSeat(dealer);
+      setLiveSeats(() => {
+        const map: Record<number, DetectedSeat> = {};
+        for (const s of seats) map[s.seat] = s;
+        return map;
+      });
+
+      // --- new-deal detection: a seat that had no cards now shows cards ---
+      let newDeal = false;
+      for (const s of seats) {
+        const prev = lastHasCards.current[s.seat];
+        if (s.hasCards && prev === false) newDeal = true;
+        lastHasCards.current[s.seat] = s.hasCards;
+      }
+      if (newDeal) {
+        handFlags.current = { vpip: new Set(), pfr: new Set() };
+        lastActionSig.current = {};
+      }
+
+      const profilesNext = { ...profilesRef.current };
+      let profilesDirty = false;
+
+      setPlayers((prev) => {
+        // grow the seat list if the table shows more seats than configured
+        const maxSeat = Math.max(prev.length, ...seats.map((s) => s.seat));
+        const next: SeatPlayer[] = [];
+        for (let i = 0; i < maxSeat; i++) {
+          next[i] = prev[i] ?? { id: i, name: `Seat ${i + 1}`, stack: config.startingStack, inHand: true };
+        }
+
+        for (const s of seats) {
+          const idx = s.seat - 1;
+          if (idx < 0 || idx >= next.length) continue;
+          const cur = next[idx];
+          const isHeroSeat = s.isHero || cur.name === config.heroName;
+
+          // empty seat -> retire
+          if (s.isEmpty) {
+            next[idx] = { ...cur, name: `Seat ${idx + 1}`, inHand: false };
+            continue;
+          }
+
+          // new player took this seat -> register fresh analytics from now
+          let name = cur.name;
+          if (!isHeroSeat && s.name && !s.name.startsWith("Seat ") && s.name !== cur.name) {
+            name = s.name;
+            if (!profilesNext[name]) {
+              profilesNext[name] = ensureProfile(name, profilesNext);
+              profilesDirty = true;
+            }
+          }
+
+          next[idx] = {
+            ...cur,
+            name,
+            stack: s.stack != null ? s.stack : cur.stack,
+            inHand: s.hasCards, // no cards = folded/out for this hand
+          };
+        }
+        return next;
+      });
+
+      if (profilesDirty) persistProfiles(profilesNext);
+
+      // --- log de-duplicated actions into the profiling pipeline ---
+      const streetGuess = board.length === 0 ? "preflop" : "postflop";
+      for (const s of seats) {
+        if (s.isEmpty || !s.action) continue;
+        const idx = s.seat - 1;
+        const seatPlayer = playersRef.current[idx];
+        if (s.isHero || seatPlayer?.name === config.heroName) continue;
+        const name =
+          s.name && !s.name.startsWith("Seat ") ? s.name : seatPlayer?.name ?? `Seat ${idx + 1}`;
+        if (!name || name === config.heroName) continue;
+        const sig = `${s.action}:${s.betAmount ?? 0}:${streetGuess}`;
+        if (lastActionSig.current[name] === sig) continue;
+        lastActionSig.current[name] = sig;
+        logAction(name, s.action, s.betAmount ?? 0, streetGuess);
+      }
+    },
+    [config.startingStack, config.heroName, board.length, logAction, persistProfiles]
+  );
+
+
+
   const activeOpponents = players.filter((p) => p.inHand && p.name !== config.heroName);
   const hero_ = players.find((p) => p.name === config.heroName);
 
@@ -229,6 +333,7 @@ export function useGame() {
     players, setPlayers, activeOpponents, heroSeat: hero_,
     hero, setHero, board, setBoard, pot, setPot, toCall, setToCall,
     profiles, logAction, setNote, resetProfiles, newHand,
+    syncFromVision, liveSeats, dealerSeat,
   };
 }
 

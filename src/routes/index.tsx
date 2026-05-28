@@ -5,7 +5,7 @@ import { cardKey } from "@/lib/poker/types";
 import { GameSetup } from "@/components/poker/GameSetup";
 import { BlindTimer } from "@/components/poker/BlindTimer";
 import { CardPicker } from "@/components/poker/CardPicker";
-import { OpponentPanel } from "@/components/poker/OpponentPanel";
+import { PokerTable } from "@/components/poker/PokerTable";
 import { Recommendation } from "@/components/poker/Recommendation";
 import { ScreenShare } from "@/components/poker/ScreenShare";
 import { Button } from "@/components/ui/button";
@@ -44,12 +44,14 @@ function Index() {
   if (!started) return <GameSetup onStart={start} />;
 
   return (
-    <div className="felt-surface min-h-screen px-3 py-4">
-      <div className="mx-auto max-w-6xl space-y-4">
+    <div className="matrix-bg min-h-screen px-3 py-4">
+      <div className="relative z-10 mx-auto max-w-6xl space-y-4">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-lg font-extrabold leading-none">Poker Co-Pilot</h1>
-            <p className="text-xs text-muted-foreground">{variant.label} · {street}</p>
+            <h1 className="font-display text-xl font-black leading-none">
+              POKER<span className="text-matrix"> CO-PILOT</span>
+            </h1>
+            <p className="font-data text-xs text-muted-foreground">{variant.label} · {street}</p>
           </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={newHand} className="gap-1"><Plus className="h-4 w-4" /> New hand</Button>
@@ -59,8 +61,11 @@ function Index() {
           </div>
         </header>
 
+        {/* Centerpiece: live poker table */}
+        <PokerTable game={game} street={street} />
+
         <div className="grid gap-4 lg:grid-cols-3">
-          {/* Left: your hand + math */}
+          {/* Left: your hand + blinds */}
           <div className="space-y-4">
             <BlindTimer game={game} />
             <div className="space-y-4 rounded-xl border border-border bg-card p-4">
@@ -69,16 +74,14 @@ function Index() {
                 <CardPicker label="Board" cards={board} max={variant.boardSize} disabledKeys={disabledKeys} onChange={setBoard} accent="muted" />
               )}
             </div>
+          </div>
+
+          {/* Middle: math */}
+          <div className="space-y-4">
             <Recommendation game={game} street={street} />
           </div>
 
-          {/* Middle: opponents */}
-          <div className="space-y-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Table & action log</h2>
-            <OpponentPanel game={game} street={street} />
-          </div>
-
-          {/* Right: screen share */}
+          {/* Right: live reader */}
           <div className="space-y-4">
             <ScreenShare game={game} />
           </div>
