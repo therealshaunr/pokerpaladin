@@ -39,21 +39,57 @@ export function decide(input: DecisionInput): Decision {
 
   const heroBB = bb > 0 ? heroStack / bb : 99;
   const preflop = variant.community && board.length === 0;
+
+  // Preflop hand strength (Hold'em): percentile, lower = stronger.
+  let handPct = 1;
+  if (preflop && variant.gating && hero.length === 2) {
+    handPct = handPercentile(hero[0], hero[1]);
+  }
+
   let shove: Decision["shove"];
   if (preflop && variant.gating && hero.length === 2 && heroBB <= 22) {
     const pf = pushFractionForBB(heroBB);
-    const pct = handPercentile(hero[0], hero[1]);
-    shove = { advised: pct <= pf, pushFraction: pf, handPct: pct };
+    shove = { advised: handPct <= pf, pushFraction: pf, handPct };
   }
 
+  // ---- Preflop, no bet to face: open-raise premium/strong hands ----
+  if (preflop && toCall <= 0) {
+    // Short stack with a jam-worthy hand -> shove.
+    if (shove?.advised) {
+      return {
+        equity: eq, requiredEquity: 0, evCall: 0, verdict: "Shove",
+        headline: `Shove ${heroStack} (${heroBB.toFixed(0)} bb) — top ${(shove.pushFraction * 100).toFixed(0)}% jam range`,
+        detail: `Short stack, hand in top ${(handPct * 100).toFixed(0)}%. Jam for fold equity + blinds/antes.`,
+        suggestedSize: heroStack, shove,
+      };
+    }
+    // Top ~18% of hands -> raise; otherwise check the option in the BB.
+    if (handPct <= 0.18) {
+      const size = Math.min(heroStack, Math.max(bb * 3, Math.round(pot)));
+      return {
+        equity: eq, requiredEquity: 0, evCall: 0, verdict: "Raise",
+        headline: `Raise to ~${size} — premium hand (top ${(handPct * 100).toFixed(0)}%)`,
+        detail: `Open for value. ${(eq * 100).toFixed(0)}% equity vs ${oppCount} opponent${oppCount === 1 ? "" : "s"}.`,
+        suggestedSize: size, shove,
+      };
+    }
+    return {
+      equity: eq, requiredEquity: 0, evCall: 0, verdict: "Check",
+      headline: `Check — marginal hand (top ${(handPct * 100).toFixed(0)}%)`,
+      detail: "Not strong enough to open. Take a free look if you're in the big blind.", shove,
+    };
+  }
+
+  // ---- Postflop / Stud, no bet to face ----
   if (toCall <= 0) {
     const valueThreshold = oppCount <= 1 ? 0.55 : 0.62;
     if (eq >= valueThreshold) {
-      const size = Math.min(heroStack, Math.round(pot * (eq > 0.75 ? 0.75 : 0.5)));
+      const basePot = pot > 0 ? pot : bb * 4;
+      const size = Math.min(heroStack, Math.round(basePot * (eq > 0.75 ? 0.75 : 0.5)));
       return {
         equity: eq, requiredEquity: 0, evCall: 0, verdict: "Bet",
         headline: `Bet ~${size} — ${(eq * 100).toFixed(0)}% equity vs ${oppCount} in`,
-        detail: `Ahead of the field. Bet for value (~${Math.round((size / Math.max(pot, 1)) * 100)}% pot).`,
+        detail: `Ahead of the field. Bet for value (~${Math.round((size / Math.max(basePot, 1)) * 100)}% pot).`,
         suggestedSize: size, shove,
       };
     }
@@ -64,8 +100,10 @@ export function decide(input: DecisionInput): Decision {
     };
   }
 
-  const required = toCall / (pot + toCall);
-  const evCall = eq * pot - (1 - eq) * toCall;
+  // ---- Facing a bet: pot odds. Floor the pot so unknown pots don't force folds. ----
+  const effPot = pot > 0 ? pot : toCall * 2; // assume ~half-pot bet if pot unreadable
+  const required = toCall / (effPot + toCall);
+  const evCall = eq * effPot - (1 - eq) * toCall;
   const margin = eq - required;
 
   let verdict: Decision["verdict"];
@@ -73,29 +111,37 @@ export function decide(input: DecisionInput): Decision {
   let detail: string;
   let suggestedSize: number | undefined;
 
-  if (margin < -0.03) {
+  // Premium preflop hands never fold to a single raise — re-raise instead.
+  const premiumPreflop = preflop && handPct <= 0.06;
+
+  if (shove?.advised && preflop) {
+    verdict = "Shove";
+    suggestedSize = heroStack;
+    headline = `Shove ${heroStack} (${heroBB.toFixed(0)} bb) — top ${(shove.pushFraction * 100).toFixed(0)}% push range`;
+    detail = `Short stack: hand in top ${(handPct * 100).toFixed(0)}% — jam for max fold equity + blinds/antes.`;
+  } else if (premiumPreflop) {
+    verdict = "Raise";
+    suggestedSize = Math.min(heroStack, Math.round(toCall * 3));
+    headline = `Raise to ~${suggestedSize} — premium hand (top ${(handPct * 100).toFixed(0)}%)`;
+    detail = `Re-raise for value. ${(eq * 100).toFixed(0)}% equity — never fold this preflop.`;
+  } else if (margin < -0.04) {
     verdict = "Fold";
     headline = `Fold — need ${(required * 100).toFixed(0)}%, only have ${(eq * 100).toFixed(0)}%`;
-    detail = `Calling ${toCall} into ${pot} is -EV (${evCall.toFixed(0)} chips). Let it go.`;
+    detail = `Calling ${toCall} into ${effPot} is -EV (${evCall.toFixed(0)} chips). Let it go.`;
   } else if (margin >= 0.18 && heroStack > toCall) {
     verdict = "Raise";
-    suggestedSize = Math.min(heroStack, Math.round((pot + toCall) * 1.1 + toCall));
+    suggestedSize = Math.min(heroStack, Math.round((effPot + toCall) * 1.1 + toCall));
     headline = `Raise to ~${suggestedSize} — ${(eq * 100).toFixed(0)}% vs ${(required * 100).toFixed(0)}% needed`;
     detail = `Big equity edge (+${(margin * 100).toFixed(0)}%). Raise for value & deny equity.`;
   } else {
     verdict = "Call";
     headline = `Call — ${(eq * 100).toFixed(0)}% vs ${(required * 100).toFixed(0)}% required`;
-    detail = `+EV call (~${evCall.toFixed(0)} chips). Thin edge (+${(margin * 100).toFixed(0)}%), just call.`;
-  }
-
-  if (shove?.advised && preflop) {
-    verdict = "Shove";
-    headline = `Shove ${heroStack} (${heroBB.toFixed(0)} bb) — top ${(shove.pushFraction * 100).toFixed(0)}% push range`;
-    detail = `Short stack: hand in top ${(shove.handPct * 100).toFixed(0)}% — jam for max fold equity + blinds/antes.`;
+    detail = `+EV call (~${evCall.toFixed(0)} chips). Edge +${(margin * 100).toFixed(0)}%.`;
   }
 
   return { equity: eq, requiredEquity: required, evCall, verdict, headline, detail, suggestedSize, shove };
 }
+
 
 // ---------- Opponent profiling (Caro-style behavioral tags) ----------
 export interface ProfileReadout {
