@@ -35,8 +35,11 @@ export function ScreenShare({ game }: { game: GameApi }) {
         await videoRef.current.play();
       }
       setSharing(true);
-      setStatus("Screen connected. Flip on LIVE and the engine watches the table.");
+      setStatus("Screen connected — running first scan to fill the table…");
       stream.getVideoTracks()[0].addEventListener("ended", stopShare);
+      // auto deal-in scan: fill stacks, blinds, level, clock, cards once a frame exists
+      setTimeout(() => runAnalyze("deal-in scan"), 1200);
+
     } catch {
       setStatus("Screen share was cancelled or blocked.");
     }
