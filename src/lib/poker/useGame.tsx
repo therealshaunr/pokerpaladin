@@ -69,9 +69,11 @@ export function useGame() {
   const [levelIdx, setLevelIdx] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(config.levelMinutes * 60);
   const [clockOn, setClockOn] = useState(false); // off unless a clock is detected or user toggles it
+  const [manualBlind, setManualBlind] = useState<BlindLevel | null>(null); // user-entered low stakes (e.g. 1/2)
 
   const schedule = useMemo(() => buildSchedule(config), [config]);
-  const blind = schedule[Math.min(levelIdx, schedule.length - 1)];
+  const blind = manualBlind ?? schedule[Math.min(levelIdx, schedule.length - 1)];
+
 
   useEffect(() => {
     if (!started || !clockOn) return;
