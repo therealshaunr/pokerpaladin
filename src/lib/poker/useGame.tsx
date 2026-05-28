@@ -59,7 +59,10 @@ function load<T>(k: string, fallback: T): T {
 
 export function useGame() {
   const [config, setConfig] = useState<GameConfig>(() => load(CONFIG_KEY, DEFAULT_CONFIG));
+  const configRef = useRef(config);
+  configRef.current = config;
   const [started, setStarted] = useState(false);
+
   const variant = VARIANTS[config.variantId];
 
   // Blind level + timer
