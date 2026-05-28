@@ -74,7 +74,7 @@ function Index() {
 
           {/* Right: math + what to do */}
           <div className="space-y-4">
-            <Recommendation game={game} street={street} />
+            <Recommendation game={game} />
           </div>
         </div>
       </div>
