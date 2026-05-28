@@ -43,7 +43,8 @@ function whatToDo(d: Decision, pot: number): string {
 
 
 export function Recommendation({ game, street }: { game: GameApi; street: string }) {
-  const { variant, hero, board, pot, toCall, setPot, setToCall, blind, heroSeat, activeOpponents, profiles, config, heroToAct } = game;
+export function Recommendation({ game, street }: { game: GameApi; street: string }) {
+  const { variant, hero, board, pot, toCall, blind, heroSeat, activeOpponents, profiles, config, heroToAct } = game;
   const [result, setResult] = useState<Decision | null>(null);
   const [busy, setBusy] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
@@ -73,30 +74,16 @@ export function Recommendation({ game, street }: { game: GameApi; street: string
     }, 10);
   };
 
-  // Auto-surface the play the moment it's the hero's turn.
-  const wasHeroToAct = useRef(false);
+  // Auto-recompute the play whenever the table state changes (cards, board,
+  // pot, to-call) or it becomes the hero's turn — keeps "best play" current
+  // with every auto-analyze pass.
+  const heroKey = hero.map((c) => `${c.r}${c.s}`).join("");
+  const boardKey = board.map((c) => `${c.r}${c.s}`).join("");
   useEffect(() => {
-    if (heroToAct && !wasHeroToAct.current && ready && !busy) {
-      run();
-    }
-    wasHeroToAct.current = heroToAct;
+    if (ready && !busy) run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heroToAct, ready]);
+  }, [heroKey, boardKey, pot, toCall, heroToAct, activeOpponents.length]);
 
-  return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-xs text-muted-foreground">
-          Pot
-          <Input type="number" value={pot} onChange={(e) => setPot(Number(e.target.value))} className="mt-1 h-8" />
-        </label>
-        <label className="text-xs text-muted-foreground">
-          To call
-          <Input type="number" value={toCall} onChange={(e) => setToCall(Number(e.target.value))} className="mt-1 h-8" />
-        </label>
-      </div>
-
-      {/* WHAT TO DO — big red call-out, front and center */}
       <div
         className={cn(
           "mt-3 rounded-xl border-2 p-3 text-center transition",
