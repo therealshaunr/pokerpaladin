@@ -132,13 +132,57 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+/* ============================================================
+ * Poker Co-Pilot — dark felt theme (overrides the defaults above)
+ * ============================================================ */
+:root {
+  --radius: 0.75rem;
+  --background: oklch(0.19 0.03 165);
+  --foreground: oklch(0.96 0.01 110);
+  --card: oklch(0.23 0.035 165);
+  --card-foreground: oklch(0.96 0.01 110);
+  --popover: oklch(0.21 0.035 165);
+  --popover-foreground: oklch(0.96 0.01 110);
+  --primary: oklch(0.78 0.16 85);
+  --primary-foreground: oklch(0.2 0.04 160);
+  --secondary: oklch(0.28 0.04 165);
+  --secondary-foreground: oklch(0.96 0.01 110);
+  --muted: oklch(0.27 0.03 165);
+  --muted-foreground: oklch(0.72 0.02 140);
+  --accent: oklch(0.55 0.17 25);
+  --accent-foreground: oklch(0.98 0.01 90);
+  --destructive: oklch(0.58 0.22 27);
+  --destructive-foreground: oklch(0.98 0.01 90);
+  --border: oklch(0.34 0.04 165);
+  --input: oklch(0.32 0.04 165);
+  --ring: oklch(0.78 0.16 85);
+
+  --felt: oklch(0.26 0.05 162);
+  --felt-edge: oklch(0.16 0.03 165);
+  --win: oklch(0.72 0.18 145);
+  --lose: oklch(0.62 0.21 27);
+  --call: oklch(0.78 0.16 85);
+}
+
+@theme inline {
+  --color-felt: var(--felt);
+  --color-win: var(--win);
+  --color-lose: var(--lose);
+  --color-call: var(--call);
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
   }
-
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
 }
+
+.felt-surface {
+  background:
+    radial-gradient(ellipse at 50% 18%, color-mix(in oklab, var(--felt) 92%, white 8%), var(--felt) 55%, var(--felt-edge) 100%);
+}
+
