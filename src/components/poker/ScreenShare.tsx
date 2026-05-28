@@ -4,29 +4,37 @@ import type { GameApi } from "@/lib/poker/useGame";
 import { analyzeTable } from "@/lib/poker/vision.functions";
 import { parseCard, cardKey, type Card } from "@/lib/poker/types";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { MonitorUp, ScanEye, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { MonitorUp, ScanEye, X, Radio } from "lucide-react";
+
+const DIFF_W = 64;
+const DIFF_H = 36;
+const POLL_MS = 1200; // how often we look for a change
+const DIFF_THRESHOLD = 9; // mean per-pixel change (0-255) that counts as "something happened"
 
 export function ScreenShare({ game }: { game: GameApi }) {
-  const { variant, setHero, setBoard, setPot, setToCall } = game;
+  const { variant, setHero, setBoard, setPot, setToCall, syncFromVision } = game;
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const lastFrameRef = useRef<Uint8ClampedArray | null>(null);
+  const busyRef = useRef(false);
   const [sharing, setSharing] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [auto, setAuto] = useState(false);
+  const [live, setLive] = useState(false);
   const [status, setStatus] = useState<string>("");
+  const [lastRead, setLastRead] = useState<string>("");
   const analyze = useServerFn(analyzeTable);
 
   const startShare = async () => {
     try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 1 }, audio: false });
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: 2 }, audio: false });
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
       }
       setSharing(true);
-      setStatus("Screen connected. Click Analyze when it's your turn.");
+      setStatus("Screen connected. Flip on LIVE and the engine watches the table.");
       stream.getVideoTracks()[0].addEventListener("ended", stopShare);
     } catch {
       setStatus("Screen share was cancelled or blocked.");
@@ -36,11 +44,13 @@ export function ScreenShare({ game }: { game: GameApi }) {
   const stopShare = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    lastFrameRef.current = null;
     setSharing(false);
-    setAuto(false);
+    setLive(false);
     setStatus("");
   };
 
+  // full-res JPEG for the AI
   const grabFrame = (): string | null => {
     const v = videoRef.current;
     if (!v || !v.videoWidth) return null;
@@ -54,14 +64,38 @@ export function ScreenShare({ game }: { game: GameApi }) {
     return canvas.toDataURL("image/jpeg", 0.7);
   };
 
-  const runAnalyze = async () => {
+  // tiny grayscale fingerprint for local change-detection (no AI cost)
+  const grabFingerprint = (): Uint8ClampedArray | null => {
+    const v = videoRef.current;
+    if (!v || !v.videoWidth) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = DIFF_W;
+    canvas.height = DIFF_H;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) return null;
+    ctx.drawImage(v, 0, 0, DIFF_W, DIFF_H);
+    return ctx.getImageData(0, 0, DIFF_W, DIFF_H).data;
+  };
+
+  const meanDiff = (a: Uint8ClampedArray, b: Uint8ClampedArray): number => {
+    let sum = 0;
+    for (let i = 0; i < a.length; i += 4) {
+      const ga = (a[i] + a[i + 1] + a[i + 2]) / 3;
+      const gb = (b[i] + b[i + 1] + b[i + 2]) / 3;
+      sum += Math.abs(ga - gb);
+    }
+    return sum / (a.length / 4);
+  };
+
+  const runAnalyze = async (reason: string) => {
     const image = grabFrame();
     if (!image) {
       setStatus("No frame yet — give the share a second.");
       return;
     }
+    busyRef.current = true;
     setBusy(true);
-    setStatus("Reading the table…");
+    setStatus(`Reading the table… (${reason})`);
     try {
       const res = await analyze({ data: { image, variantLabel: variant.label } });
       const dead = new Set<string>();
@@ -82,33 +116,46 @@ export function ScreenShare({ game }: { game: GameApi }) {
       if (boardCards.length) setBoard(boardCards);
       if (typeof res.pot === "number") setPot(res.pot);
       if (typeof res.toCall === "number") setToCall(res.toCall);
-      setStatus(
-        `Read ${holeCards.length} hole / ${boardCards.length} board card(s). Confirm or fix below.` +
-          (res.notes ? ` (${res.notes})` : "")
+      if (res.seats.length) syncFromVision(res.seats, res.dealerSeat);
+      setLastRead(
+        `${holeCards.length} hole · ${boardCards.length} board · ${res.seats.length} seats` +
+          (res.notes ? ` — ${res.notes}` : "")
       );
+      setStatus(`Updated ${new Date().toLocaleTimeString()}.`);
     } catch (e) {
       setStatus(e instanceof Error ? e.message : "Vision failed.");
+      setLive(false); // stop hammering on errors (rate limit / credits)
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   };
 
+  // LIVE loop: poll a cheap fingerprint, only call AI when the table changed
   useEffect(() => {
-    if (!auto || !sharing) return;
+    if (!live || !sharing) return;
     const id = setInterval(() => {
-      if (!busy) runAnalyze();
-    }, 8000);
+      if (busyRef.current) return;
+      const fp = grabFingerprint();
+      if (!fp) return;
+      const prev = lastFrameRef.current;
+      const changed = !prev || meanDiff(prev, fp) > DIFF_THRESHOLD;
+      if (changed) {
+        lastFrameRef.current = fp;
+        runAnalyze(prev ? "table changed" : "first read");
+      }
+    }, POLL_MS);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auto, sharing, busy]);
+  }, [live, sharing]);
 
   useEffect(() => () => stopShare(), []);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <ScanEye className="h-4 w-4 text-primary" /> Screen-share assist
+        <div className="flex items-center gap-2 font-display text-sm font-bold">
+          <ScanEye className="h-4 w-4 text-wizard" /> Live table reader
         </div>
         {sharing && (
           <button onClick={stopShare} className="text-muted-foreground hover:text-foreground">
@@ -117,7 +164,13 @@ export function ScreenShare({ game }: { game: GameApi }) {
         )}
       </div>
 
-      <video ref={videoRef} muted playsInline className="mt-2 aspect-video w-full rounded-md border border-border bg-black/40 object-contain" style={{ display: sharing ? "block" : "none" }} />
+      <video
+        ref={videoRef}
+        muted
+        playsInline
+        className="mt-2 aspect-video w-full rounded-md border border-border bg-black/40 object-contain"
+        style={{ display: sharing ? "block" : "none" }}
+      />
 
       {!sharing ? (
         <Button onClick={startShare} variant="secondary" className="mt-2 w-full gap-2">
@@ -125,19 +178,27 @@ export function ScreenShare({ game }: { game: GameApi }) {
         </Button>
       ) : (
         <div className="mt-2 space-y-2">
-          <Button onClick={runAnalyze} disabled={busy} className="w-full gap-2">
-            <ScanEye className="h-4 w-4" /> {busy ? "Analyzing…" : "Analyze table now"}
+          <button
+            onClick={() => setLive((v) => !v)}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-bold uppercase tracking-wide transition",
+              live ? "bg-matrix text-black glow-matrix" : "bg-secondary text-foreground hover:bg-secondary/70"
+            )}
+          >
+            <Radio className={cn("h-4 w-4", live && "live-dot rounded-full")} />
+            {live ? "LIVE — watching" : "Go LIVE"}
+          </button>
+          <Button onClick={() => runAnalyze("manual")} disabled={busy} variant="secondary" className="w-full gap-2">
+            <ScanEye className="h-4 w-4" /> {busy ? "Analyzing…" : "Analyze once"}
           </Button>
-          <div className="flex items-center justify-between rounded-lg bg-secondary/40 px-3 py-2 text-xs">
-            <span className="text-muted-foreground">Auto-read every 8s (uses AI credits)</span>
-            <Switch checked={auto} onCheckedChange={setAuto} />
-          </div>
         </div>
       )}
 
-      {status && <p className="mt-2 text-xs text-muted-foreground">{status}</p>}
+      {status && <p className="mt-2 font-data text-xs text-muted-foreground">{status}</p>}
+      {lastRead && <p className="mt-1 font-data text-[11px] text-matrix/80">↳ {lastRead}</p>}
       <p className="mt-2 text-[11px] leading-snug text-muted-foreground/70">
-        Experimental: AI reads a snapshot and pre-fills cards/pot — always confirm. The math engine runs locally and is the source of truth.
+        Pick the poker tab/window to share. The engine only spends AI when the table visibly changes, auto-fills cards,
+        chips and actions, and treats a seat with no cards as folded. Always confirm — the local math is the source of truth.
       </p>
     </div>
   );
