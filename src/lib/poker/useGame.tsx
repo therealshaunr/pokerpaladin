@@ -369,11 +369,14 @@ export function useGame() {
   return {
     config, setConfig, started, start, variant,
     schedule, levelIdx, blind, secondsLeft, setLevelIdx,
+    clockOn, setClockOn,
     players, setPlayers, activeOpponents, heroSeat: hero_,
     hero, setHero, board, setBoard, pot, setPot, toCall, setToCall,
     profiles, logAction, setNote, resetProfiles, newHand,
-    syncFromVision, liveSeats, dealerSeat,
+    syncFromVision, syncMeta, liveSeats, dealerSeat, heroToAct,
   };
+}
+
 }
 
 export type GameApi = ReturnType<typeof useGame>;
