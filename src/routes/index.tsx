@@ -25,7 +25,7 @@ function Index() {
   const game = useGame();
   const { started, start, variant, hero, setHero, board, setBoard, newHand, resetProfiles } = game;
 
-  const street = useMemo(() => {
+  const { started, start, variant, hero, setHero, board, setBoard } = game;
     if (!variant.community) return board.length ? "late" : "early";
     if (board.length === 0) return "preflop";
     if (board.length <= 3) return "flop";
