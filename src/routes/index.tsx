@@ -23,9 +23,10 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const game = useGame();
-  const { started, start, variant, hero, setHero, board, setBoard, newHand, resetProfiles } = game;
-
   const { started, start, variant, hero, setHero, board, setBoard } = game;
+
+  const street = useMemo(() => {
+
     if (!variant.community) return board.length ? "late" : "early";
     if (board.length === 0) return "preflop";
     if (board.length <= 3) return "flop";
