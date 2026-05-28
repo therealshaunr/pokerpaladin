@@ -333,6 +333,7 @@ export function useGame() {
     players, setPlayers, activeOpponents, heroSeat: hero_,
     hero, setHero, board, setBoard, pot, setPot, toCall, setToCall,
     profiles, logAction, setNote, resetProfiles, newHand,
+    syncFromVision, liveSeats, dealerSeat,
   };
 }
 
