@@ -46,7 +46,6 @@ export function ScreenShare({ game }: { game: GameApi }) {
   const stopShare = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
-    lastFrameRef.current = null;
     setSharing(false);
     setLive(false);
     setStatus("");
