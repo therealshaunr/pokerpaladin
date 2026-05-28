@@ -84,7 +84,11 @@ export function Recommendation({ game, street }: { game: GameApi; street: string
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heroKey, boardKey, pot, toCall, heroToAct, activeOpponents.length]);
 
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      {/* WHAT TO DO — big red call-out, front and center */}
       <div
+
         className={cn(
           "mt-3 rounded-xl border-2 p-3 text-center transition",
           result
