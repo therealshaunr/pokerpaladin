@@ -377,6 +377,5 @@ export function useGame() {
   };
 }
 
-}
 
 export type GameApi = ReturnType<typeof useGame>;
