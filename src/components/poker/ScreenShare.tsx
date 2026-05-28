@@ -68,28 +68,6 @@ export function ScreenShare({ game }: { game: GameApi }) {
     return canvas.toDataURL("image/jpeg", 0.7);
   };
 
-  // tiny grayscale fingerprint for local change-detection (no AI cost)
-  const grabFingerprint = (): Uint8ClampedArray | null => {
-    const v = videoRef.current;
-    if (!v || !v.videoWidth) return null;
-    const canvas = document.createElement("canvas");
-    canvas.width = DIFF_W;
-    canvas.height = DIFF_H;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
-    if (!ctx) return null;
-    ctx.drawImage(v, 0, 0, DIFF_W, DIFF_H);
-    return ctx.getImageData(0, 0, DIFF_W, DIFF_H).data;
-  };
-
-  const meanDiff = (a: Uint8ClampedArray, b: Uint8ClampedArray): number => {
-    let sum = 0;
-    for (let i = 0; i < a.length; i += 4) {
-      const ga = (a[i] + a[i + 1] + a[i + 2]) / 3;
-      const gb = (b[i] + b[i + 1] + b[i + 2]) / 3;
-      sum += Math.abs(ga - gb);
-    }
-    return sum / (a.length / 4);
-  };
 
   const runAnalyze = async (reason: string) => {
     const image = grabFrame();
