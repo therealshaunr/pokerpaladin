@@ -65,7 +65,8 @@ function parseSeats(arr: unknown): DetectedSeat[] {
 
 function safeParse(text: string): VisionResult {
   const empty: VisionResult = {
-    hole: [], board: [], pot: null, toCall: null, street: null, dealerSeat: null, seats: [], notes: "",
+    hole: [], board: [], pot: null, toCall: null, street: null, dealerSeat: null, seats: [],
+    smallBlind: null, bigBlind: null, ante: null, clockSeconds: null, heroToAct: false, notes: "",
   };
   if (!text) return empty;
   const match = text.match(/\{[\s\S]*\}/);
@@ -80,12 +81,18 @@ function safeParse(text: string): VisionResult {
       street: typeof obj.street === "string" ? obj.street.toLowerCase() : null,
       dealerSeat: toNum(obj.dealerSeat),
       seats: parseSeats(obj.seats),
+      smallBlind: toNum(obj.smallBlind),
+      bigBlind: toNum(obj.bigBlind),
+      ante: toNum(obj.ante),
+      clockSeconds: toNum(obj.clockSeconds),
+      heroToAct: obj.heroToAct === true,
       notes: typeof obj.notes === "string" ? obj.notes : "",
     };
   } catch {
     return { ...empty, notes: "Could not parse vision output." };
   }
 }
+
 
 export const analyzeTable = createServerFn({ method: "POST" })
   .inputValidator((input: VisionInput) => {
