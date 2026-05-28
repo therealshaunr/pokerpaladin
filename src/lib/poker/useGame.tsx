@@ -371,6 +371,8 @@ export function useGame() {
   return {
     config, setConfig, started, start, variant,
     schedule, levelIdx, blind, secondsLeft, setLevelIdx,
+    manualBlind, setManualBlind,
+
     clockOn, setClockOn,
     players, setPlayers, activeOpponents, heroSeat: hero_,
     hero, setHero, board, setBoard, pot, setPot, toCall, setToCall,
