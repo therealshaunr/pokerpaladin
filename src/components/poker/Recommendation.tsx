@@ -41,7 +41,6 @@ function whatToDo(d: Decision, pot: number): string {
   }
 }
 
-}
 
 export function Recommendation({ game, street }: { game: GameApi; street: string }) {
   const { variant, hero, board, pot, toCall, setPot, setToCall, blind, heroSeat, activeOpponents, profiles, config, heroToAct } = game;
