@@ -9,8 +9,8 @@ import { MonitorUp, ScanEye, X, Radio } from "lucide-react";
 
 const DIFF_W = 64;
 const DIFF_H = 36;
-const POLL_MS = 1200; // how often we look for a change
-const DIFF_THRESHOLD = 9; // mean per-pixel change (0-255) that counts as "something happened"
+const POLL_MS = 5000; // re-scan the table every 5 seconds while LIVE
+
 
 export function ScreenShare({ game }: { game: GameApi }) {
   const { variant, setHero, setBoard, setPot, setToCall, syncFromVision, syncMeta } = game;
