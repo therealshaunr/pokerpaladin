@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
 import { Calculator, ChevronDown } from "lucide-react";
 
 const VERDICT_STYLE: Record<string, string> = {
-  Fold: "bg-[oklch(0.4_0.04_165)] text-foreground",
+  Fold: "bg-[oklch(0.35_0.02_160)] text-foreground",
   Check: "bg-secondary text-foreground",
-  Call: "bg-[oklch(0.78_0.16_85)] text-[oklch(0.2_0.04_160)]",
-  Bet: "bg-[oklch(0.72_0.18_145)] text-black",
-  Raise: "bg-[oklch(0.65_0.2_40)] text-black",
+  Call: "bg-[oklch(0.8_0.14_95)] text-black",
+  Bet: "bg-matrix text-black glow-matrix",
+  Raise: "wizard-gradient text-white glow-wizard",
   Shove: "bg-[oklch(0.58_0.22_27)] text-white",
 };
 
