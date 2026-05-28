@@ -84,6 +84,8 @@ export function useGame() {
 
   // Players
   const [players, setPlayers] = useState<SeatPlayer[]>([]);
+  const playersRef = useRef<SeatPlayer[]>([]);
+  playersRef.current = players;
   const initPlayers = useCallback((cfg: GameConfig) => {
     const list: SeatPlayer[] = [];
     for (let i = 0; i < cfg.numPlayers; i++) {
