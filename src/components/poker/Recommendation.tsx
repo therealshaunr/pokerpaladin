@@ -42,8 +42,7 @@ function whatToDo(d: Decision, pot: number): string {
 }
 
 
-export function Recommendation({ game, street }: { game: GameApi; street: string }) {
-export function Recommendation({ game, street }: { game: GameApi; street: string }) {
+export function Recommendation({ game }: { game: GameApi }) {
   const { variant, hero, board, pot, toCall, blind, heroSeat, activeOpponents, profiles, config, heroToAct } = game;
   const [result, setResult] = useState<Decision | null>(null);
   const [busy, setBusy] = useState(false);
