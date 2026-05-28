@@ -123,8 +123,14 @@ export function useGame() {
     src[name] ?? {
       name, hands: 0, vpipHands: 0, pfrHands: 0, aggressive: 0, passive: 0, folds: 0, notes: "",
     };
-
   // Track which players already counted VPIP/PFR this hand.
+  const handFlags = useRef<{ vpip: Set<string>; pfr: Set<string> }>({ vpip: new Set(), pfr: new Set() });
+
+  // Vision reconciliation memory: dedup repeated actions + detect a new deal.
+  const lastActionSig = useRef<Record<string, string>>({});
+  const lastHasCards = useRef<Record<number, boolean>>({});
+  const [liveSeats, setLiveSeats] = useState<Record<number, DetectedSeat>>({});
+  const [dealerSeat, setDealerSeat] = useState<number | null>(null);
   const handFlags = useRef<{ vpip: Set<string>; pfr: Set<string> }>({ vpip: new Set(), pfr: new Set() });
 
   const start = useCallback(
