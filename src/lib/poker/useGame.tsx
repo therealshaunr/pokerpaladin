@@ -306,7 +306,10 @@ export function useGame() {
       for (const s of seats) {
         if (s.isEmpty || !s.action) continue;
         const idx = s.seat - 1;
-        const name = liveNameForSeat(idx, s, config.heroName);
+        const seatPlayer = playersRef.current[idx];
+        if (s.isHero || seatPlayer?.name === config.heroName) continue;
+        const name =
+          s.name && !s.name.startsWith("Seat ") ? s.name : seatPlayer?.name ?? `Seat ${idx + 1}`;
         if (!name || name === config.heroName) continue;
         const sig = `${s.action}:${s.betAmount ?? 0}:${streetGuess}`;
         if (lastActionSig.current[name] === sig) continue;
