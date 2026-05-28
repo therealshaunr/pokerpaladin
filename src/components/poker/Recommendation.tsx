@@ -38,9 +38,9 @@ function whatToDo(d: Decision, pot: number): string {
       else label = `${size}`;
       return `${d.verdict.toUpperCase()} ${label}`;
     }
-    default:
-      return d.verdict.toUpperCase();
   }
+}
+
 }
 
 export function Recommendation({ game, street }: { game: GameApi; street: string }) {
