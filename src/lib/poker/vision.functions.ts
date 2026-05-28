@@ -110,7 +110,8 @@ export const analyzeTable = createServerFn({ method: "POST" })
       `Report ONLY what is clearly visible. Return STRICT JSON (no prose, no markdown) in exactly this shape:\n` +
       `{"hole":["As","Kd"],"board":["Th","9s","2c"],"pot":1234,"toCall":200,"street":"flop","dealerSeat":3,` +
       `"seats":[{"seat":1,"name":"username","stack":1500,"hasCards":true,"isHero":false,"isEmpty":false,"action":"raise","betAmount":120}],` +
-      `"notes":"short read"}\n` +
+      `"smallBlind":10,"bigBlind":20,"ante":0,"clockSeconds":214,"heroToAct":true,"notes":"short read"}\n` +
+
       `Card format: rank A K Q J T 9 8 7 6 5 4 3 2 + suit s h d c (e.g. "Qh"). ` +
       `hole = the hero's own cards. board = community cards (empty array for stud). ` +
       `seats = EVERY visible seat going clockwise starting top-left; number them 1..N by screen position. ` +
