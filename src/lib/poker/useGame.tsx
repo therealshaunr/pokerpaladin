@@ -136,6 +136,39 @@ export function useGame() {
   const lastHasCards = useRef<Record<number, boolean>>({});
   const [liveSeats, setLiveSeats] = useState<Record<number, DetectedSeat>>({});
   const [dealerSeat, setDealerSeat] = useState<number | null>(null);
+  const [heroToAct, setHeroToAct] = useState(false);
+
+  // Map detected blinds onto the schedule + sync clock from a vision read.
+  const syncMeta = useCallback(
+    (meta: {
+      smallBlind: number | null;
+      bigBlind: number | null;
+      ante: number | null;
+      clockSeconds: number | null;
+      heroToAct: boolean;
+    }) => {
+      setHeroToAct(meta.heroToAct);
+      if (meta.bigBlind && meta.bigBlind > 0) {
+        const sched = buildSchedule(configRef.current);
+        let best = 0;
+        let bestDiff = Infinity;
+        sched.forEach((lvl, i) => {
+          const d = Math.abs(lvl.bb - meta.bigBlind!);
+          if (d < bestDiff) {
+            bestDiff = d;
+            best = i;
+          }
+        });
+        setLevelIdx(best);
+      }
+      if (meta.clockSeconds != null && meta.clockSeconds > 0) {
+        setSecondsLeft(meta.clockSeconds);
+        setClockOn(true); // a clock is present — sync and run it
+      }
+    },
+    []
+  );
+
 
   const start = useCallback(
     (cfg: GameConfig) => {
