@@ -8,8 +8,6 @@ import { CardPicker } from "@/components/poker/CardPicker";
 import { PokerTable } from "@/components/poker/PokerTable";
 import { Recommendation } from "@/components/poker/Recommendation";
 import { ScreenShare } from "@/components/poker/ScreenShare";
-import { Button } from "@/components/ui/button";
-import { RotateCcw, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
