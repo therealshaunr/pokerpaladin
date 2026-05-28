@@ -141,3 +141,53 @@ export function fieldLooseness(profiles: ProfileReadout[]): number {
   const avg = known.reduce((s, p) => s + Math.max(0.1, Math.min(0.8, p.vpip)), 0) / known.length;
   return avg;
 }
+
+// ---------- Per-action "why are they betting?" read (local stats, no AI) ----------
+import type { ActionType } from "./types";
+
+export interface ActionRead {
+  text: string;
+  bluffRisk: "low" | "medium" | "high" | "n/a";
+}
+
+/**
+ * Translate an opponent's action into a plain-language read using their
+ * logged tendencies. Pure heuristics over VPIP/PFR/AF — costs zero credits.
+ */
+export function actionRead(
+  read: ProfileReadout,
+  action: ActionType,
+  betAmount: number,
+  pot: number,
+): ActionRead {
+  const overbet = pot > 0 && betAmount > pot;
+  const big = pot > 0 && betAmount > pot * 0.66;
+  const vpip = (read.vpip * 100).toFixed(0);
+
+  if (action === "fold") return { text: "Folded — out of the hand.", bluffRisk: "n/a" };
+  if (action === "check") return { text: "Checked — passive line, often giving up or trapping.", bluffRisk: "low" };
+  if (action === "call") {
+    if (read.tagClass === "station")
+      return { text: `Called — calling station (VPIP ${vpip}%). Value bet thin, don't bluff.`, bluffRisk: "low" };
+    return { text: `Called — drawing or pot-controlling a medium hand.`, bluffRisk: "low" };
+  }
+
+  // bet / raise / allin
+  const aggro = action === "allin" ? "Shoved" : action === "raise" ? "Raised" : "Bet";
+  switch (read.tagClass) {
+    case "maniac":
+      return { text: `${aggro}${overbet ? " (overbet)" : ""} — maniac (AF ${read.af.toFixed(1)}). Likely a bluff; call down lighter.`, bluffRisk: "high" };
+    case "lag":
+      return { text: `${aggro} — LAG, wide range. Could be a bluff, especially with sizing pressure.`, bluffRisk: "high" };
+    case "station":
+      return { text: `${aggro} — station rarely bets. This is usually the nuts. Believe it.`, bluffRisk: "low" };
+    case "rock":
+      return { text: `${aggro} — rock/nit. They've got it. Fold marginal hands.`, bluffRisk: "low" };
+    case "shark":
+      return { text: `${aggro}${big ? " big" : ""} — TAG/shark, balanced. ${big ? "Polarized: strong or a planned bluff." : "Mostly value."}`, bluffRisk: big ? "medium" : "low" };
+    default:
+      if (overbet) return { text: `${aggro} an overbet — polarizing: monster or bluff. Read-dependent.`, bluffRisk: "medium" };
+      return { text: `${aggro} — not enough history yet for a strong read.`, bluffRisk: "medium" };
+  }
+}
+
