@@ -114,9 +114,17 @@ export function ScreenShare({ game }: { game: GameApi }) {
       const holeCards = toCards(res.hole, variant.holeCount);
       const boardCards = variant.community ? toCards(res.board, variant.boardSize) : [];
       if (holeCards.length) setHero(holeCards);
-      if (boardCards.length) setBoard(boardCards);
       if (typeof res.pot === "number") setPot(res.pot);
       if (typeof res.toCall === "number") setToCall(res.toCall);
+      if (res.seats.length) syncFromVision(res.seats, res.dealerSeat);
+      syncMeta({
+        smallBlind: res.smallBlind,
+        bigBlind: res.bigBlind,
+        ante: res.ante,
+        clockSeconds: res.clockSeconds,
+        heroToAct: res.heroToAct,
+      });
+
       if (res.seats.length) syncFromVision(res.seats, res.dealerSeat);
       setLastRead(
         `${holeCards.length} hole · ${boardCards.length} board · ${res.seats.length} seats` +
