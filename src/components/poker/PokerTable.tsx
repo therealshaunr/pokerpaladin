@@ -71,7 +71,6 @@ export function PokerTable({ game, street }: { game: GameApi; street: string }) 
                   {cardLabel(c)}
                 </span>
               ))
-              ))
             )}
           </div>
           <div className="rounded-full bg-background/70 px-3 py-0.5 font-data text-xs text-matrix">
