@@ -65,6 +65,8 @@ export function useGame() {
   // Blind level + timer
   const [levelIdx, setLevelIdx] = useState(0);
   const [secondsLeft, setSecondsLeft] = useState(config.levelMinutes * 60);
+  const [clockOn, setClockOn] = useState(false); // off unless a clock is detected or user toggles it
+
   const schedule = useMemo(() => buildSchedule(config), [config]);
   const blind = schedule[Math.min(levelIdx, schedule.length - 1)];
 
