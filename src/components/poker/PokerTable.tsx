@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { GameApi } from "@/lib/poker/useGame";
 import { readProfile, actionRead } from "@/lib/poker/strategy";
-import type { ActionType, OpponentProfile } from "@/lib/poker/types";
+import { type ActionType, type OpponentProfile, cardLabel } from "@/lib/poker/types";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
