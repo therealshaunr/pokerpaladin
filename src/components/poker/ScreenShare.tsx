@@ -144,20 +144,16 @@ export function ScreenShare({ game }: { game: GameApi }) {
     }
   };
 
-  // LIVE loop: poll a cheap fingerprint, only call AI when the table changed
+  // LIVE loop: re-scan the table every 5 seconds to stay current
   useEffect(() => {
     if (!live || !sharing) return;
     const id = setInterval(() => {
       if (busyRef.current) return;
-      const fp = grabFingerprint();
-      if (!fp) return;
-      const prev = lastFrameRef.current;
-      const changed = !prev || meanDiff(prev, fp) > DIFF_THRESHOLD;
-      if (changed) {
-        lastFrameRef.current = fp;
-        runAnalyze(prev ? "table changed" : "first read");
-      }
+      runAnalyze("auto refresh");
     }, POLL_MS);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [live, sharing]);
