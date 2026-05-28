@@ -82,8 +82,6 @@ export function useGame() {
     return () => clearInterval(t);
   }, [started, clockOn, config.levelMinutes, schedule.length]);
 
-    return () => clearInterval(t);
-  }, [started, config.levelMinutes, schedule.length]);
 
   // Players
   const [players, setPlayers] = useState<SeatPlayer[]>([]);
