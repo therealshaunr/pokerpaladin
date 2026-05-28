@@ -46,20 +46,13 @@ function Index() {
   return (
     <div className="matrix-bg min-h-screen px-3 py-4">
       <div className="relative z-10 mx-auto max-w-6xl space-y-4">
-        <header className="flex items-center justify-between">
-          <div>
-            <h1 className="font-display text-xl font-black leading-none">
-              POKER<span className="text-matrix"> CO-PILOT</span>
-            </h1>
-            <p className="font-data text-xs text-muted-foreground">{variant.label} · {street}</p>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={newHand} className="gap-1"><Plus className="h-4 w-4" /> New hand</Button>
-            <Button size="sm" variant="secondary" onClick={resetProfiles} className="gap-1" title="Clear opponent stats">
-              <RotateCcw className="h-4 w-4" />
-            </Button>
-          </div>
+        <header>
+          <h1 className="font-display text-xl font-black leading-none">
+            POKER<span className="text-matrix"> CO-PILOT</span>
+          </h1>
+          <p className="font-data text-xs text-muted-foreground">{variant.label} · {street}</p>
         </header>
+
 
         {/* Centerpiece: live poker table + live reader, side by side */}
         <div className="grid gap-4 lg:grid-cols-2">
