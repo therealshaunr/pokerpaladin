@@ -16,7 +16,6 @@ export function ScreenShare({ game }: { game: GameApi }) {
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const lastFrameRef = useRef<Uint8ClampedArray | null>(null);
   const busyRef = useRef(false);
   const [sharing, setSharing] = useState(false);
   const [busy, setBusy] = useState(false);
