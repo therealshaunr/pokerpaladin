@@ -131,7 +131,6 @@ export function useGame() {
   const lastHasCards = useRef<Record<number, boolean>>({});
   const [liveSeats, setLiveSeats] = useState<Record<number, DetectedSeat>>({});
   const [dealerSeat, setDealerSeat] = useState<number | null>(null);
-  const handFlags = useRef<{ vpip: Set<string>; pfr: Set<string> }>({ vpip: new Set(), pfr: new Set() });
 
   const start = useCallback(
     (cfg: GameConfig) => {
