@@ -1,5 +1,6 @@
 import type { GameApi } from "@/lib/poker/useGame";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Clock } from "lucide-react";
 
 function fmt(s: number) {
@@ -9,7 +10,9 @@ function fmt(s: number) {
 }
 
 export function BlindTimer({ game }: { game: GameApi }) {
-  const { blind, secondsLeft, levelIdx, schedule, setLevelIdx } = game;
+  const { blind, secondsLeft, levelIdx, schedule, setLevelIdx, clockOn, setClockOn } = game;
+  const nextAnte = schedule[Math.min(levelIdx + 1, schedule.length - 1)]?.ante ?? 0;
+
   const nextAnte = schedule[Math.min(levelIdx + 1, schedule.length - 1)]?.ante ?? 0;
 
   return (
