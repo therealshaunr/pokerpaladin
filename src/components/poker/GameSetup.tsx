@@ -4,24 +4,30 @@ import { VARIANTS, type VariantId } from "@/lib/poker/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Spade } from "lucide-react";
+import { Lock, LockOpen, Spade } from "lucide-react";
+
+const ACCESS_CODE = "paladinpoker";
 
 export function GameSetup({ onStart }: { onStart: (cfg: GameConfig) => void }) {
   const [cfg, setCfg] = useState<GameConfig>(DEFAULT_CONFIG);
+  const [code, setCode] = useState("");
   const set = <K extends keyof GameConfig>(k: K, v: GameConfig[K]) => setCfg((c) => ({ ...c, [k]: v }));
+  const unlocked = code.trim().toLowerCase() === ACCESS_CODE;
 
   return (
-    <div className="felt-surface min-h-screen px-4 py-10">
-      <div className="mx-auto max-w-lg">
+    <div className="matrix-bg min-h-screen px-4 py-10">
+      <div className="relative z-10 mx-auto max-w-lg">
         <div className="mb-6 text-center">
           <div className="mb-2 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
             <Spade className="h-7 w-7" />
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight">Poker Co-Pilot</h1>
-          <p className="text-sm text-muted-foreground">Configure your game, then deal in.</p>
+          <h1 className="font-display text-2xl font-black tracking-tight">
+            POKER<span className="text-matrix"> PALADIN</span>
+          </h1>
+          <p className="font-data text-sm text-muted-foreground">Pick your game, then unlock the table.</p>
         </div>
 
-        <div className="space-y-4 rounded-2xl border border-border bg-card p-5">
+        <div className="space-y-5 rounded-2xl border border-border bg-card p-5">
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Game</label>
             <div className="mt-2 grid grid-cols-2 gap-2">
@@ -41,37 +47,43 @@ export function GameSetup({ onStart }: { onStart: (cfg: GameConfig) => void }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Players" value={cfg.numPlayers} min={2} max={10} onChange={(v) => set("numPlayers", v)} />
-            <Field label="Starting stack" value={cfg.startingStack} min={100} step={100} onChange={(v) => set("startingStack", v)} />
-            <Field label="Minutes / level" value={cfg.levelMinutes} min={1} max={60} onChange={(v) => set("levelMinutes", v)} />
-            <Field label="Antes from level" value={cfg.anteFromLevel} min={1} max={16} onChange={(v) => set("anteFromLevel", v)} />
-          </div>
-
           <label className="block">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Your name</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Display name</span>
             <Input value={cfg.heroName} onChange={(e) => set("heroName", e.target.value)} className="mt-1" />
           </label>
 
-          <Button onClick={() => onStart(cfg)} className="w-full text-base font-bold">
+          <div className="rounded-xl border border-border bg-secondary/30 p-3">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              {unlocked ? (
+                <LockOpen className="h-4 w-4 text-matrix" />
+              ) : (
+                <Lock className="h-4 w-4 text-muted-foreground" />
+              )}
+              {unlocked ? "Unlocked" : "Locked"}
+            </div>
+            <Input
+              type="password"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="Secret code"
+              className="mt-2"
+            />
+            {!unlocked && (
+              <p className="mt-1 font-data text-[11px] text-muted-foreground">
+                Enter the access code to deal in.
+              </p>
+            )}
+          </div>
+
+          <Button
+            onClick={() => onStart(cfg)}
+            disabled={!unlocked}
+            className="w-full text-base font-bold"
+          >
             Deal in →
           </Button>
         </div>
       </div>
     </div>
-  );
-}
-
-function Field({
-  label, value, onChange, min, max, step = 1,
-}: {
-  label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number;
-}) {
-  return (
-    <label className="block">
-      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</span>
-      <Input type="number" value={value} min={min} max={max} step={step}
-        onChange={(e) => onChange(Number(e.target.value))} className="mt-1" />
-    </label>
   );
 }
