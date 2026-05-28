@@ -3,6 +3,7 @@ import {
   type ActionType,
   type BlindLevel,
   type Card,
+  type DetectedSeat,
   type OpponentProfile,
   type VariantId,
   VARIANTS,
