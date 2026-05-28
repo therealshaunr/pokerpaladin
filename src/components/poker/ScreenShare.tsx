@@ -7,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MonitorUp, ScanEye, X, Radio } from "lucide-react";
 
-const DIFF_W = 64;
-const DIFF_H = 36;
 const POLL_MS = 5000; // re-scan the table every 5 seconds while LIVE
+
 
 
 export function ScreenShare({ game }: { game: GameApi }) {
