@@ -89,7 +89,3 @@ function Index() {
   );
 }
 
-      </div>
-    </div>
-  );
-}
