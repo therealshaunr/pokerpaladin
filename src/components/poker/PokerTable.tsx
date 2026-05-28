@@ -68,10 +68,9 @@ export function PokerTable({ game, street }: { game: GameApi; street: string }) 
                   )}
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
-                  {["", "", "", ""][0]}
-                  {["A", "K", "Q", "J", "T", "9", "8", "7", "6", "5", "4", "3", "2"][14 - c.r]}
-                  {["♣", "♦", "♥", "♠"][c.s]}
+                  {cardLabel(c)}
                 </span>
+              ))
               ))
             )}
           </div>
