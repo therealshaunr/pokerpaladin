@@ -80,6 +80,18 @@ export interface OpponentProfile {
   notes: string;
 }
 
+// A single seat as read from a screen-share frame by the vision model.
+export interface DetectedSeat {
+  seat: number;          // 1-based seat index around the table (by screen position)
+  name: string;          // username or "Seat N" if unreadable
+  stack: number | null;  // chip count, null if unreadable
+  hasCards: boolean;     // are hole cards visible / face-down in front of them
+  isHero: boolean;       // is this the hero seat
+  isEmpty: boolean;      // seat is empty (no player sitting)
+  action: ActionType | null; // last visible action this street
+  betAmount: number | null;  // chips committed with that action
+}
+
 export const SUIT_SYMBOL: Record<Suit, string> = { 0: "♣", 1: "♦", 2: "♥", 3: "♠" };
 export const SUIT_LETTER: Record<Suit, string> = { 0: "c", 1: "d", 2: "h", 3: "s" };
 export const RANK_LABEL: Record<number, string> = {
