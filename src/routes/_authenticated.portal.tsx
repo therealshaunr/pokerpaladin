@@ -66,9 +66,15 @@ function Portal() {
               <p className="font-data text-[11px] text-muted-foreground">Member portal</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut} className="gap-2">
-            <LogOut className="h-4 w-4" /> Sign out
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link to="/admin"><Button variant="secondary" size="sm" className="gap-2"><Shield className="h-4 w-4 text-gold" /> Admin</Button></Link>
+            )}
+            <Button variant="ghost" size="sm" onClick={signOut} className="gap-2">
+              <LogOut className="h-4 w-4" /> Sign out
+            </Button>
+          </div>
+
         </header>
 
         <section className="rounded-2xl border border-border bg-card p-6">
