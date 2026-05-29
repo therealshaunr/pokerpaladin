@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ScanEye, Radio, BarChart3, Mic, Smartphone, Puzzle, Check, ShieldAlert, Sparkles, Apple, ShoppingBag } from "lucide-react";
 import { PocketQR } from "@/components/PocketQRCard";
+import { useCart } from "@/lib/cart";
 import heroImg from "@/assets/paladin-hero.jpg";
 
 
@@ -217,9 +218,10 @@ function AddOn({ icon: Icon, name, price, desc }: { icon: typeof Puzzle; name: s
 }
 
 export function SiteNav() {
+  const { totals } = useCart();
   return (
     <div className="relative z-10 mx-auto max-w-6xl px-4 py-5">
-      <nav className="flex items-center justify-between">
+      <nav className="flex items-center justify-between gap-3">
         <Link to="/" className="flex items-center gap-2">
           <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl arcane-gradient text-primary-foreground">
             <Sparkles className="h-5 w-5" />
@@ -235,6 +237,18 @@ export function SiteNav() {
           <Link to="/faq"><Button variant="ghost" size="sm">FAQ</Button></Link>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            to="/shop/cart"
+            aria-label={`Cart (${totals.itemCount} items)`}
+            className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-card hover:border-gold/40"
+          >
+            <ShoppingBag className="h-4 w-4" />
+            {totals.itemCount > 0 && (
+              <span className="absolute -right-1.5 -top-1.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-gold px-1 font-data text-[10px] font-black text-background">
+                {totals.itemCount}
+              </span>
+            )}
+          </Link>
           <Link to="/login"><Button variant="ghost" size="sm">Sign in</Button></Link>
           <Link to="/login" search={{ redirect: "/portal" }}><Button size="sm">Get started</Button></Link>
         </div>

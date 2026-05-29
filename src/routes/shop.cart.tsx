@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { SiteNav, SiteFooter } from "./index";
-import { CartProvider, useCart, fmtPrice, lineUnitPrice } from "@/lib/cart";
+import { useCart, fmtPrice, lineUnitPrice } from "@/lib/cart";
 import {
   productBySlug,
   BUNDLE_DISCOUNT_PCT,
@@ -24,11 +24,7 @@ import { CartUpsell } from "@/components/CartUpsell";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/shop/cart")({
-  component: () => (
-    <CartProvider>
-      <CartPage />
-    </CartProvider>
-  ),
+  component: CartPage,
 });
 
 function CartPage() {

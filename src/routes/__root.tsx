@@ -13,6 +13,7 @@ import { PaladinBot } from "@/components/PaladinBot";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
+import { CartProvider } from "@/lib/cart";
 
 function NotFoundComponent() {
   return (
@@ -139,9 +140,11 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        {!hideBot && <PaladinBot />}
+        <CartProvider>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+          {!hideBot && <PaladinBot />}
+        </CartProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
