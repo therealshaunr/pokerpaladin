@@ -15,7 +15,7 @@ export type Product = {
   badge?: string;
 };
 
-const APPAREL_SIZES: Variant[] = ["XS", "S", "M", "L", "XL", "XXL"].map((s) => ({ id: s, label: s }));
+const APPAREL_SIZES: Variant[] = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map((s) => ({ id: s, label: s }));
 const KID_SIZES: Variant[] = ["4", "6", "8", "10", "12", "14"].map((s) => ({ id: s, label: s }));
 const FITS: Variant[] = [
   { id: "mens", label: "Men" },
@@ -34,8 +34,23 @@ export const CUSTOMIZATION_FEE = 800; // $8
 export const CUSTOMIZATION_DAYS = 7;
 export const BUNDLE_DISCOUNT_THRESHOLD = 3;
 export const BUNDLE_DISCOUNT_PCT = 10;
-export const FREE_SHIPPING_THRESHOLD = 10000; // $100
-export const STANDARD_SHIPPING = 799; // $7.99
+export const FREE_SHIPPING_THRESHOLD = 10000; // $100 — Standard becomes free at/above this subtotal
+
+// Flat-rate USPS shipping.
+export const STANDARD_SHIPPING = 2999; // $29.99 — flat USPS Standard
+export const EXPEDITED_SHIPPING = 1999; // $19.99 — USPS Expedited; user pays even when Standard would be free
+
+// XL+ apparel costs more — we surcharge 20% on the line unit price.
+export const OVERSIZE_SIZES = new Set(["XL", "XXL", "XXXL"]);
+export const OVERSIZE_UPCHARGE_PCT = 20;
+
+export function isOversize(size?: string): boolean {
+  return !!size && OVERSIZE_SIZES.has(size);
+}
+export function applyOversize(unitCents: number, size?: string): number {
+  if (!isOversize(size)) return unitCents;
+  return Math.round((unitCents * (100 + OVERSIZE_UPCHARGE_PCT)) / 100);
+}
 
 export const PRODUCTS: Product[] = [
   {

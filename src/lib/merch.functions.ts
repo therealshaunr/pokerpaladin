@@ -17,6 +17,8 @@ export const createMerchCheckout = createServerFn({ method: "POST" })
     (data: {
       lines: MerchLineInput[];
       shippingCents: number;
+      shippingMethod: "standard" | "expedited";
+      donationCents?: number;
       successUrl: string;
       cancelUrl: string;
       customerEmail?: string;
@@ -30,25 +32,73 @@ export const createMerchCheckout = createServerFn({ method: "POST" })
         if (!Number.isInteger(l.quantity) || l.quantity < 1 || l.quantity > 50) throw new Error("Invalid quantity");
       }
       if (!Number.isInteger(data.shippingCents) || data.shippingCents < 0 || data.shippingCents > 50000) throw new Error("Invalid shipping");
+      if (data.shippingMethod !== "standard" && data.shippingMethod !== "expedited") throw new Error("Invalid shipping method");
+      if (data.donationCents != null) {
+        if (!Number.isInteger(data.donationCents) || data.donationCents < 0 || data.donationCents > 50000) {
+          throw new Error("Invalid donation amount");
+        }
+      }
       return data;
     },
   )
   .handler(async ({ data }): Promise<MerchResult> => {
     try {
       const stripe = createStripeClient(data.environment);
+      const isExpedited = data.shippingMethod === "expedited";
       const shippingOptions = [
         {
           shipping_rate_data: {
-            display_name: data.shippingCents === 0 ? "Free shipping" : "Standard shipping",
+            display_name: isExpedited
+              ? "USPS Expedited"
+              : data.shippingCents === 0
+              ? "USPS Standard (Free)"
+              : "USPS Standard",
             type: "fixed_amount" as const,
             fixed_amount: { amount: data.shippingCents, currency: "usd" },
-            delivery_estimate: {
-              minimum: { unit: "business_day" as const, value: 5 },
-              maximum: { unit: "business_day" as const, value: 10 },
-            },
+            delivery_estimate: isExpedited
+              ? {
+                  minimum: { unit: "business_day" as const, value: 2 },
+                  maximum: { unit: "business_day" as const, value: 4 },
+                }
+              : {
+                  minimum: { unit: "business_day" as const, value: 5 },
+                  maximum: { unit: "business_day" as const, value: 10 },
+                },
           },
         },
       ];
+
+      const lineItems = data.lines.map((l) => ({
+        quantity: l.quantity,
+        price_data: {
+          currency: "usd",
+          unit_amount: l.unitAmount,
+          tax_behavior: "exclusive" as const,
+          product_data: {
+            name: l.name,
+            ...(l.description && { description: l.description }),
+            tax_code: "txcd_30070003", // Apparel & accessories
+          },
+        },
+      }));
+
+      // Charity donation rides as an extra line item — not taxed, not shippable,
+      // a pure passthrough to Wounded Warrior Project.
+      if (data.donationCents && data.donationCents > 0) {
+        lineItems.push({
+          quantity: 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: data.donationCents,
+            tax_behavior: "exclusive" as const,
+            product_data: {
+              name: "Wounded Warrior Project Donation",
+              description: "100% passthrough — supports the Wounded Warrior Project.",
+              tax_code: "txcd_90020000", // Non-taxable donation
+            },
+          },
+        });
+      }
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
@@ -58,19 +108,7 @@ export const createMerchCheckout = createServerFn({ method: "POST" })
         shipping_address_collection: { allowed_countries: ["US", "CA", "GB", "AU", "DE", "FR", "NL", "IE", "NZ"] },
         shipping_options: shippingOptions,
         ...(data.customerEmail && { customer_email: data.customerEmail }),
-        line_items: data.lines.map((l) => ({
-          quantity: l.quantity,
-          price_data: {
-            currency: "usd",
-            unit_amount: l.unitAmount,
-            tax_behavior: "exclusive" as const,
-            product_data: {
-              name: l.name,
-              ...(l.description && { description: l.description }),
-              tax_code: "txcd_30070003", // Apparel & accessories
-            },
-          },
-        })),
+        line_items: lineItems,
       });
 
       return { url: session.url ?? "" };
