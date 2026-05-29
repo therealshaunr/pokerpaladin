@@ -26,6 +26,7 @@ import { Route as ShopCartRouteImport } from './routes/shop.cart'
 import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
 import { Route as PocketInstallRouteImport } from './routes/pocket.install'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
+import { Route as ApiBotRouteImport } from './routes/api/bot'
 import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated.portal'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
@@ -116,6 +117,11 @@ const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
   path: '/checkout/return',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBotRoute = ApiBotRouteImport.update({
+  id: '/api/bot',
+  path: '/api/bot',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedPortalRoute = AuthenticatedPortalRouteImport.update({
   id: '/portal',
   path: '/portal',
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
+  '/api/bot': typeof ApiBotRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/pocket/install': typeof PocketInstallRoute
   '/shop/$slug': typeof ShopSlugRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
+  '/api/bot': typeof ApiBotRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/pocket/install': typeof PocketInstallRoute
   '/shop/$slug': typeof ShopSlugRoute
@@ -207,6 +215,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/portal': typeof AuthenticatedPortalRoute
+  '/api/bot': typeof ApiBotRoute
   '/checkout/return': typeof CheckoutReturnRoute
   '/pocket/install': typeof PocketInstallRoute
   '/shop/$slug': typeof ShopSlugRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/portal'
+    | '/api/bot'
     | '/checkout/return'
     | '/pocket/install'
     | '/shop/$slug'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/app'
     | '/portal'
+    | '/api/bot'
     | '/checkout/return'
     | '/pocket/install'
     | '/shop/$slug'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/_authenticated/app'
     | '/_authenticated/portal'
+    | '/api/bot'
     | '/checkout/return'
     | '/pocket/install'
     | '/shop/$slug'
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   ShopRoute: typeof ShopRouteWithChildren
   UserGuideRoute: typeof UserGuideRoute
+  ApiBotRoute: typeof ApiBotRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   ApiPublicHooksSweepRoute: typeof ApiPublicHooksSweepRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -427,6 +440,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CheckoutReturnRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bot': {
+      id: '/api/bot'
+      path: '/api/bot'
+      fullPath: '/api/bot'
+      preLoaderRoute: typeof ApiBotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/portal': {
       id: '/_authenticated/portal'
       path: '/portal'
@@ -518,6 +538,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   ShopRoute: ShopRouteWithChildren,
   UserGuideRoute: UserGuideRoute,
+  ApiBotRoute: ApiBotRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   ApiPublicHooksSweepRoute: ApiPublicHooksSweepRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
@@ -525,13 +546,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
