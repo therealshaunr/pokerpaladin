@@ -121,6 +121,20 @@ export function Recommendation({ game, tier = "standard", onUpgrade }: { game: G
     // Paladin Voice cue — silent unless the user toggled audio on.
     playPaladinCue(decision.verdict);
     const street = !variant.community ? "—" : board.length === 0 ? "preflop" : board.length <= 3 ? "flop" : board.length === 4 ? "turn" : "river";
+    // Record the hand for Session Review / Leak Finder
+    game.recordHand({
+      ts: Date.now(),
+      street,
+      hero: [...hero],
+      board: [...board],
+      pot,
+      toCall,
+      verdict: decision.verdict,
+      equity: decision.equity,
+      requiredEquity: decision.requiredEquity,
+      evCall: decision.evCall,
+      suggestedSize: decision.suggestedSize,
+    });
     publishVerdict(user.id, {
       verdict: decision.verdict,
       headline: decision.headline,
@@ -135,7 +149,9 @@ export function Recommendation({ game, tier = "standard", onUpgrade }: { game: G
       heroToAct,
       ts: Date.now(),
     });
-  }, [user, decision, stale, playable, streetKey, pot, toCall, heroToAct, variant.community, board, hero]);
+  }, [user, decision, stale, playable, streetKey, pot, toCall, heroToAct, variant.community, board, hero, game]);
+
+  const isPro = tier === "pro";
 
   return (
 
