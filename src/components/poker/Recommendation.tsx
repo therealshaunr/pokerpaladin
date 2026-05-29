@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { GameApi } from "@/lib/poker/useGame";
 import { decide, readProfile, fieldLooseness, type Decision } from "@/lib/poker/strategy";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Calculator, ChevronDown, Lock } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { publishVerdict } from "@/lib/pocket-channel";
+
 
 const VERDICT_STYLE: Record<string, string> = {
   Fold: "bg-[oklch(0.35_0.02_160)] text-foreground",
@@ -50,6 +53,8 @@ interface StampedResult {
 
 export function Recommendation({ game }: { game: GameApi }) {
   const { variant, hero, board, pot, toCall, blind, heroSeat, activeOpponents, profiles, config, heroToAct } = game;
+  const { user } = useAuth();
+
   const [result, setResult] = useState<StampedResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
