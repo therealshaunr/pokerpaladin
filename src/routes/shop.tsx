@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { SiteNav, SiteFooter } from "./index";
-import { CartProvider, useCart, fmtPrice } from "@/lib/cart";
-import { PRODUCTS } from "@/lib/merch/catalog";
-import { ShoppingBag } from "lucide-react";
+import { useCart, fmtPrice } from "@/lib/cart";
+import { PRODUCTS, productBySlug } from "@/lib/merch/catalog";
+import { ShoppingBag, Plus, Check } from "lucide-react";
+import { useState } from "react";
 
 export const Route = createFileRoute("/shop")({
   head: () => ({
@@ -13,11 +14,7 @@ export const Route = createFileRoute("/shop")({
       { property: "og:description", content: "Wear the crest. Bundle 3 for 10% off." },
     ],
   }),
-  component: () => (
-    <CartProvider>
-      <ShopPage />
-    </CartProvider>
-  ),
+  component: ShopPage,
 });
 
 function ShopPage() {
