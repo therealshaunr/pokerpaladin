@@ -110,7 +110,27 @@ export function Recommendation({ game }: { game: GameApi }) {
   const frozen = !!(result && !heroToAct && !stale);
   const showVerdict = !!decision && !stale;
 
-  return (
+  // Broadcast to Paladin Pocket (mobile mirror) whenever a fresh verdict is ready.
+  useEffect(() => {
+    if (!user || !decision || stale) return;
+    const street = !variant.community ? "—" : board.length === 0 ? "preflop" : board.length <= 3 ? "flop" : board.length === 4 ? "turn" : "river";
+    publishVerdict(user.id, {
+      verdict: decision.verdict,
+      headline: decision.headline,
+      detail: decision.detail,
+      equity: decision.equity,
+      requiredEquity: decision.requiredEquity,
+      evCall: decision.evCall,
+      suggestedSize: decision.suggestedSize,
+      pot, toCall, street,
+      hero: hero.map((c) => `${c.r}${c.s}`),
+      board: board.map((c) => `${c.r}${c.s}`),
+      heroToAct,
+      ts: Date.now(),
+    });
+  }, [user, decision, stale, streetKey, pot, toCall, heroToAct, variant.community, board, hero]);
+
+
     <div className="rounded-xl border border-border bg-card p-4">
       {/* WHAT TO DO — big red call-out, front and center */}
       <div
