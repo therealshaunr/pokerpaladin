@@ -4,6 +4,8 @@ import { SiteNav, SiteFooter } from "./index";
 import { Clock, Eye, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 export const Route = createFileRoute("/user-guide")({
+  head: () => ({
+    meta: [
       { title: "User Manual — Poker Paladin" },
       { name: "description", content: "Two-minute setup, the live hand flow, and troubleshooting for Poker Paladin's screen-reading co-pilot." },
       { property: "og:title", content: "Poker Paladin User Manual" },
@@ -13,7 +15,6 @@ export const Route = createFileRoute("/user-guide")({
   component: UserGuide,
 });
 
-});
 
 function UserGuide() {
   return (
