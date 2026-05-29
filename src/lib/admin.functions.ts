@@ -70,11 +70,12 @@ export const adminToggleLicense = createServerFn({ method: "POST" })
       .update(patch as never)
       .eq("id", data.subscription_id);
     if (error) throw new Error(error.message);
-
+    await supabaseAdmin.from("audit_log").insert({
       actor_id: context.userId,
       action: `subscription.${data.action}`,
       meta: { subscription_id: data.subscription_id },
-    });
+    } as never);
+
     return { ok: true };
   });
 
