@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { SiteNav, SiteFooter } from "./index";
-import { Sparkles, Eye, TrendingUp, Coins } from "lucide-react";
+import { Sparkles, Eye, TrendingUp, Coins, RotateCcw } from "lucide-react";
 
 export const Route = createFileRoute("/demo")({
   head: () => ({
