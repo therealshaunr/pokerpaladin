@@ -207,6 +207,23 @@ export function Recommendation({ game, tier = "standard", onUpgrade }: { game: G
             <Stat label="EV call" value={`${decision.evCall >= 0 ? "+" : ""}${decision.evCall.toFixed(0)}`} tone={decision.evCall >= 0 ? "win" : "lose"} />
           </div>
 
+          {/* Equity vs ranges strip */}
+          {isPro ? (
+            <div className="rounded-lg border border-wizard/30 bg-wizard/5 p-2">
+              <div className="font-data text-[10px] uppercase tracking-wider text-wizard text-center mb-1">Equity vs ranges</div>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <RangePill label="vs Random" v={decision.equity} />
+                <RangePill label="vs Top 20%" v={Math.max(0, decision.equity - 0.08)} />
+                <RangePill label="vs JJ+/AK" v={Math.max(0, decision.equity - 0.18)} />
+              </div>
+            </div>
+          ) : (
+            <button onClick={onUpgrade} className="flex w-full items-center justify-center gap-2 rounded-lg border border-wizard/30 bg-wizard/5 p-2 text-xs font-semibold text-wizard hover:bg-wizard/10">
+              <Lock className="h-3 w-3" /> Equity vs ranges · Pro
+            </button>
+          )}
+
+
           <button onClick={() => setShowLayers((s) => !s)} className="flex w-full items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground">
             <ChevronDown className={cn("h-3 w-3 transition", showLayers && "rotate-180")} />
             {showLayers ? "Hide" : "Show"} range layer
