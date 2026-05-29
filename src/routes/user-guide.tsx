@@ -35,14 +35,16 @@ function UserGuide() {
           <p className="text-sm text-muted-foreground">
             Do this <span className="text-gold font-semibold">before</span> the first hand is dealt. Once the action's live you want zero friction.
           </p>
+          <div className="mt-3 rounded-lg border border-gold/40 bg-gold/5 p-3 text-xs text-muted-foreground">
+            <span className="text-gold font-semibold">Heads-up:</span> each game needs its own quick setup — Paladin doesn't carry over the last table's blinds, seats, or stacks. And if something's missing or a number is off, the math will still run with whatever it has and give you the closest-possible read. More data in = sharper answer out, but the Paladin never refuses to swing.
+          </div>
           <Steps
             items={[
               "Open your poker client (or table) and join the game like normal.",
               "In Poker Paladin → pick the variant (Hold'em, Omaha, PLO5, Stud).",
-              "Enter your small blind / big blind / ante. For cash games these stay constant; for tournaments the level timer will track changes.",
-              "Set seat count and your seat position so the paladin knows where you sit.",
-              "Hit Summon the Paladin →.",
-              "Click Share screen (or Focus Lens if you have the add-on) and select your poker window.",
+              "Open the All-in-One Editor on the /app screen and enter SB / BB / ante. Cash games stay constant; tournaments auto-track via the level timer.",
+              "Fill in seat names + stacks in the editor. Empty stacks show as $ — Paladin still works without them, just sharper with real numbers.",
+              "Hit Connect screen on the GO LIVE panel and pick your poker window.",
               "Verify the live table appears in the preview pane. If the cards are unreadable, drag the capture region tighter.",
             ]}
           />
@@ -52,20 +54,20 @@ function UserGuide() {
         <Section icon={Eye} title="B · During the hand">
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-border bg-card/40 p-4">
-              <div className="font-display font-bold">Standard tier</div>
+              <div className="font-display font-bold">Standard tier · SCAN NOW</div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Drop your hole cards in once dealt. When it's your turn, hit <span className="text-gold font-semibold">Best play</span> and the paladin returns a verdict in 5–7 seconds.
+                Paladin auto-scans every 8 seconds (free, doesn't burn hours) and you can tap <span className="text-matrix font-semibold">SCAN NOW</span> any time for an on-demand read. Hit <span className="text-gold font-semibold">PALADIN SAYS</span> when it's your turn and the verdict drops in 5–7 seconds.
               </p>
             </div>
             <div className="rounded-lg border border-wizard/40 bg-wizard/5 p-4">
-              <div className="font-display font-bold text-wizard">Pro tier · Go Live</div>
+              <div className="font-display font-bold text-wizard">Pro tier · GO LIVE</div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Leave Go Live on. The paladin re-reads the table every heartbeat and locks the verdict the instant the action gets to you. Don't switch tabs — the capture pauses.
+                Leave Go Live on. The paladin re-reads the table every 2.5 seconds and locks the verdict the instant action gets to you. Don't switch tabs — the capture pauses.
               </p>
             </div>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            The <span className="text-gold font-semibold">What to do</span> panel shows one of: FOLD · CHECK · CALL · BET (size) · RAISE (size) · ALL IN. The verdict only ever displays when it's actually your turn — between actions it shows "Waiting for your turn" so you're never reading a stale call.
+            The <span className="text-gold font-semibold">PALADIN SAYS</span> panel shows one of: FOLD · CHECK · CALL · BET (size) · RAISE (size) · ALL IN. The verdict only ever displays when it's actually your turn — between actions it shows "Waiting for your turn" so you're never reading a stale call.
           </p>
         </Section>
 
