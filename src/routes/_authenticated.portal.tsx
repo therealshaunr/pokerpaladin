@@ -16,13 +16,20 @@ export const Route = createFileRoute("/_authenticated/portal")({
 interface Profile { name: string | null; display_name: string | null; phone: string | null; referral_code: string | null }
 interface Sub { tier: string; interval: string; status: string; current_period_end: string | null; activation_id: string }
 interface Referral { id: string; referee_email: string; status: string; created_at: string; qualified_at: string | null; rewarded_at: string | null }
-
 function Portal() {
   const { user, signOut } = useAuth();
+  const checkAdmin = useServerFn(amIAdmin);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [sub, setSub] = useState<Sub | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [copied, setCopied] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    checkAdmin().then((r) => setIsAdmin(r.isAdmin)).catch(() => setIsAdmin(false));
+    (async () => {
+
 
   useEffect(() => {
     if (!user) return;
