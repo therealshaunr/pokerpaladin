@@ -52,7 +52,7 @@ interface StampedResult {
   key: string;
 }
 
-export function Recommendation({ game }: { game: GameApi }) {
+export function Recommendation({ game, tier = "standard", onUpgrade }: { game: GameApi; tier?: "standard" | "pro"; onUpgrade?: () => void }) {
   const { variant, hero, board, pot, toCall, blind, heroSeat, activeOpponents, profiles, config, heroToAct } = game;
   const { user } = useAuth();
 
