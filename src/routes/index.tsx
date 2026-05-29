@@ -30,11 +30,12 @@ function Landing() {
               of <span className="text-gold">cold, hard odds.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-              A novelty training tool for serious players. Share your screen, the paladin reads the table every five seconds, runs the math, and whispers the play — call, fold, raise, or shove.
+              Poker Paladin tracks every card, bet, and tell on your screen in as close to real time as possible. Standard players read the table. <span className="font-semibold text-wizard">The Arcanum</span> reads the players reading the table. Want millisecond reactions and live in-hand calls? You'll need to go <span className="font-semibold text-gold">Pro</span>.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link to="/pricing"><Button size="lg" className="font-bold">View pricing →</Button></Link>
               <Link to="/demo"><Button size="lg" variant="secondary">Try the demo</Button></Link>
+              <Link to="/how-to-play"><Button size="lg" variant="ghost">New to poker?</Button></Link>
             </div>
             <p className="mt-5 flex items-center gap-2 text-xs text-muted-foreground">
               <ShieldAlert className="h-3.5 w-3.5 text-gold" />
@@ -59,7 +60,7 @@ function Landing() {
           {[
             { icon: ScanEye, t: "Reads the table", d: "Hole cards, board, pot and stacks — extracted from your shared screen automatically." },
             { icon: BarChart3, t: "Honest math", d: "Monte-Carlo equity, premium pre-flop floors, pot-fraction sizing on every decision." },
-            { icon: Radio, t: "Go Live (Pro)", d: "Auto-refresh every 5s. The verdict is on screen the moment it's your turn to act." },
+            { icon: Radio, t: "Go Live (Pro)", d: "The first sub-second poker co-pilot. Re-reads the table every heartbeat and surfaces the play before your timer ticks. This is what separates a standard player from The Arcanum." },
           ].map((f) => (
             <div key={f.t} className="arcane-border p-5">
               <f.icon className="h-6 w-6 text-gold" />
@@ -92,7 +93,7 @@ function Landing() {
           </div>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             <AddOn icon={Mic} name="Voice Companion" price="$10/mo" desc="Whispered verdict on every street. Pro only." />
-            <AddOn icon={Puzzle} name="Chrome Extension" price="$10/mo" desc="Capture from a single tab — no full screen share." />
+            <AddOn icon={Puzzle} name="Focus Lens" price="$10/mo" desc="Capture a single window you choose — not your whole screen. Read-only pixel capture; never touches the site." />
             <AddOn icon={Smartphone} name="Mobile Renderer" price="$8/mo" desc="Mirror the verdict to your phone via a pair code." />
           </div>
           <div className="mt-6 text-center">
@@ -109,7 +110,12 @@ function Landing() {
               <p className="mt-2 text-sm text-muted-foreground">
                 Poker Paladin is a novelty training & analysis companion. It watches the screen <em>you</em> are already looking at, the same way a coach over your shoulder would. It does not bot, scrape, inject, or communicate with any poker site. It cannot act for you. You are always the one clicking the button.
               </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                <span className="font-semibold text-gold">Focus Lens</span> is a window-scoped screen capture — not a browser extension. Nothing is ever installed into the poker site's page.
+              </p>
               <div className="mt-4 flex flex-wrap gap-2">
+                <Link to="/user-guide"><Button variant="ghost" size="sm">User guide</Button></Link>
+                <Link to="/how-to-play"><Button variant="ghost" size="sm">How to play</Button></Link>
                 <Link to="/faq"><Button variant="ghost" size="sm">FAQ</Button></Link>
                 <Link to="/disclaimer"><Button variant="ghost" size="sm">Disclaimer</Button></Link>
                 <Link to="/refund-policy"><Button variant="ghost" size="sm">Refund policy</Button></Link>
@@ -174,6 +180,8 @@ export function SiteNav() {
         <div className="hidden items-center gap-1 md:flex">
           <Link to="/pricing"><Button variant="ghost" size="sm">Pricing</Button></Link>
           <Link to="/demo"><Button variant="ghost" size="sm">Demo</Button></Link>
+          <Link to="/how-to-play"><Button variant="ghost" size="sm">How to play</Button></Link>
+          <Link to="/user-guide"><Button variant="ghost" size="sm">Guide</Button></Link>
           <Link to="/faq"><Button variant="ghost" size="sm">FAQ</Button></Link>
         </div>
         <div className="flex items-center gap-2">
@@ -190,6 +198,8 @@ export function SiteFooter() {
     <footer className="mt-10 border-t border-border py-8 text-center text-xs text-muted-foreground">
       <div className="flex flex-wrap justify-center gap-4">
         <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
+        <Link to="/how-to-play" className="hover:text-foreground">How to play</Link>
+        <Link to="/user-guide" className="hover:text-foreground">User guide</Link>
         <Link to="/faq" className="hover:text-foreground">FAQ</Link>
         <Link to="/disclaimer" className="hover:text-foreground">Disclaimer</Link>
         <Link to="/refund-policy" className="hover:text-foreground">Refunds</Link>

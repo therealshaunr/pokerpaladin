@@ -9,9 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UserGuideRouteImport } from './routes/user-guide'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as HowToPlayRouteImport } from './routes/how-to-play'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
 import { Route as DemoRouteImport } from './routes/demo'
@@ -20,6 +22,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated.portal'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
 
+const UserGuideRoute = UserGuideRouteImport.update({
+  id: '/user-guide',
+  path: '/user-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RefundPolicyRoute = RefundPolicyRouteImport.update({
   id: '/refund-policy',
   path: '/refund-policy',
@@ -33,6 +40,11 @@ const PricingRoute = PricingRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowToPlayRoute = HowToPlayRouteImport.update({
+  id: '/how-to-play',
+  path: '/how-to-play',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -75,9 +87,11 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRoute
   '/disclaimer': typeof DisclaimerRoute
   '/faq': typeof FaqRoute
+  '/how-to-play': typeof HowToPlayRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/user-guide': typeof UserGuideRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
 }
@@ -86,9 +100,11 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRoute
   '/disclaimer': typeof DisclaimerRoute
   '/faq': typeof FaqRoute
+  '/how-to-play': typeof HowToPlayRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/user-guide': typeof UserGuideRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
 }
@@ -99,9 +115,11 @@ export interface FileRoutesById {
   '/demo': typeof DemoRoute
   '/disclaimer': typeof DisclaimerRoute
   '/faq': typeof FaqRoute
+  '/how-to-play': typeof HowToPlayRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/user-guide': typeof UserGuideRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/portal': typeof AuthenticatedPortalRoute
 }
@@ -112,9 +130,11 @@ export interface FileRouteTypes {
     | '/demo'
     | '/disclaimer'
     | '/faq'
+    | '/how-to-play'
     | '/login'
     | '/pricing'
     | '/refund-policy'
+    | '/user-guide'
     | '/app'
     | '/portal'
   fileRoutesByTo: FileRoutesByTo
@@ -123,9 +143,11 @@ export interface FileRouteTypes {
     | '/demo'
     | '/disclaimer'
     | '/faq'
+    | '/how-to-play'
     | '/login'
     | '/pricing'
     | '/refund-policy'
+    | '/user-guide'
     | '/app'
     | '/portal'
   id:
@@ -135,9 +157,11 @@ export interface FileRouteTypes {
     | '/demo'
     | '/disclaimer'
     | '/faq'
+    | '/how-to-play'
     | '/login'
     | '/pricing'
     | '/refund-policy'
+    | '/user-guide'
     | '/_authenticated/app'
     | '/_authenticated/portal'
   fileRoutesById: FileRoutesById
@@ -148,13 +172,22 @@ export interface RootRouteChildren {
   DemoRoute: typeof DemoRoute
   DisclaimerRoute: typeof DisclaimerRoute
   FaqRoute: typeof FaqRoute
+  HowToPlayRoute: typeof HowToPlayRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
+  UserGuideRoute: typeof UserGuideRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/user-guide': {
+      id: '/user-guide'
+      path: '/user-guide'
+      fullPath: '/user-guide'
+      preLoaderRoute: typeof UserGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/refund-policy': {
       id: '/refund-policy'
       path: '/refund-policy'
@@ -174,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-to-play': {
+      id: '/how-to-play'
+      path: '/how-to-play'
+      fullPath: '/how-to-play'
+      preLoaderRoute: typeof HowToPlayRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -248,9 +288,11 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRoute: DemoRoute,
   DisclaimerRoute: DisclaimerRoute,
   FaqRoute: FaqRoute,
+  HowToPlayRoute: HowToPlayRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   RefundPolicyRoute: RefundPolicyRoute,
+  UserGuideRoute: UserGuideRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -1,144 +1,108 @@
+# Phase 1.5 — Polish, Rebrand, and the Go-Live Fold Bug
 
-# Poker Paladin — Phase 2 Plan
+Locked decisions: **The Arcanum** (Pro-tier collective), **Focus Lens** (replaces "Chrome Extension"), **Summon the Paladin →** (replaces "Deal in"), keep the interactive demo (no video loop).
 
-Builds on the auth/portal foundation already in place. Adds billing, license-key activation, usage metering, support tickets, legal pages, and a full visual overhaul.
+---
 
-## 1. Pricing & packaging (final)
+## 1. Landing page copy rewrite (`src/routes/index.tsx`)
 
-| Plan | Price/mo | Scans/day | Go-Live hours/mo | Voice | Hand export |
-|---|---|---|---|---|---|
-| **Standard** | $79.99 | 250 manual scans | — | no | no |
-| **Pro** | $149.99 | unlimited | **60 hrs** included | yes | yes |
+**New hero subheading** (replaces the current paragraph):
+> Poker Paladin tracks every card, bet, and tell on your screen in as close to real time as possible. Standard players read the table. **The Arcanum** reads the players reading the table. Want millisecond reactions and live in-hand calls? You'll need to go Pro.
 
-**Add-ons (recurring monthly unless noted):**
-- Voice Companion — $10/mo (Pro only) *(already baked into Pro per your $89 example → keeping it as a Pro-only toggle, $0 if you'd rather bundle. **Confirm**)*
-- Chrome Extension — $10/mo
-- Mobile Renderer — $8/mo
-- **Go-Live Hour Pack** — $14.99 one-time, +10 hours (rolls over 90 days)
+**Features section** — rework the third card to lead with the differentiator:
+- **Go Live (Pro)** — "The first sub-second poker co-pilot. Our Go-Live analyzer re-reads the table every heartbeat and surfaces the play before your timer ticks. This is what separates a standard player from **The Arcanum**."
 
-Crypto = "Coming Soon" badge on checkout (Changelly placeholder).
+**Add-ons section** — replace the "Chrome Extension" card with:
+- **Focus Lens — $10/mo** · *Capture from a single window you choose, not your whole screen. Read-only pixel capture — never touches the page, never reads code, never communicates with any site.*
+- (Update the same wording in `/pricing` add-on grid.)
 
-**Trial:** No license-gated trial. A public `/demo` page lets anyone try a frozen sample hand + analyzer mock (no real screen capture). Encourages signup.
-**Refund:** 7-day money-back, account auto-disabled on refund. Posted on `/refund-policy`.
+**Trust block** — add one line: "Focus Lens is a window-scoped screen capture, not a browser extension. Nothing is ever installed into the poker site's page."
 
-## 2. License-key activation flow
+---
 
-```text
-Stripe / PayPal webhook
-        │
-        ▼
-billing.functions: handlePaymentSuccess
-  • create/find subscription row
-  • generate 25-char key (groups of 5, e.g. PLDN7-X4K2M-…)
-  • store in license_keys (user_id, plan, addons[], status='unused')
-  • enqueue confirmation email with key
-        │
-        ▼
-User opens /portal → "Activate License" card
-  • pastes key
-  • server validates → flips subscriptions.activated=true
-  • entitlements_view now returns plan + addons
-        │
-        ▼
-/app gates on getEntitlements().activated === true
-```
+## 2. "Summon the Paladin →" button
 
-**Admin override:** `/admin/users/:id` has plan + addon toggles that bypass the key requirement (for refunds, comps, support). All writes log to `audit_log`.
+- `src/components/poker/GameSetup.tsx` — change `Deal in →` to `Summon the Paladin →`.
+- Tighten the setup screen sub-copy to: *"Pick your game. Set your blinds. Summon the paladin."*
 
-## 3. Usage metering
+---
 
-Every scan + every minute of Go-Live writes to `usage_events(user_id, kind, qty, ts)`. A SQL view `usage_current_period` aggregates per billing cycle.
+## 3. New route: `/how-to-play` (basics for novice players)
 
-**Shown to user** in `/portal` sidebar:
-- Scans today: 42 / 250
-- Go-Live this month: 14.3 / 60.0 hrs
-- Next reset: Jun 28
+Create `src/routes/how-to-play.tsx` with short, plain-English primers for each supported variant. One card per game, ~120 words each:
 
-**Shown to admin** in `/admin/users/:id`: same plus all-time totals, cost is hidden.
+- **Texas Hold'em** — 2 hole cards, 5 community, best 5-card hand wins.
+- **Omaha (PLO)** — 4 hole cards, must use exactly 2 + 3 board.
+- **7-Card Stud** — no community, 7 cards dealt across streets, best 5.
+- **Short Deck (6+)** — 36-card deck, flush beats full house.
+- **Razz / Stud Hi-Lo** (if supported in `VARIANTS`).
 
-Soft enforcement: when Go-Live hits 100%, banner appears with "Buy 10-hour pack" CTA; scanning continues for 5 grace minutes then pauses until purchase.
+Each card ends with: *"Want the paladin to play this with you? [Open the analyzer →]"*
 
-## 4. Support tickets (no email)
+Add to `SiteNav` and `SiteFooter`.
 
-New tables: `support_tickets`, `ticket_messages`.
+---
 
-- `/portal/support` — list + "New Ticket" (category: billing / bug / question / feature)
-- `/portal/support/:id` — threaded view, user + admin can reply
-- `/admin/tickets` — queue with filters, assign, status (open/pending/closed)
-- Realtime via Supabase Realtime channel `ticket:{id}` so replies appear without refresh
-- Only system email = password reset, payment confirmation + license key, refund confirmation. Everything else stays in-app.
+## 4. New route: `/user-guide` (the flow + setup checklist + troubleshooting)
 
-## 5. Pages to build/update
+Create `src/routes/user-guide.tsx` with three sections:
 
-```text
-Public
-  /                      marketing landing (NEW theme + paladin hero)
-  /pricing               2 tiers + addons + go-live packs + crypto badge
-  /faq                   what it is, what it isn't, legal stance
-  /disclaimer            novelty/training tool, no scraping/injection, user accepts ToS
-  /refund-policy         7-day rule
-  /demo                  frozen sample hand (no signup needed)
-  /docs/*                user guides
-  /login /signup /reset-password
+**A. Before the hand starts (2–3 min setup):**
+1. Open your poker client and join the table.
+2. In Poker Paladin → pick the variant, enter blinds/ante, set the level timer if applicable.
+3. Add seat count and your seat position.
+4. Hit **Summon the Paladin →**.
+5. Click **Share screen** (or **Focus Lens** if you have the add-on) and pick the poker window.
 
-_authenticated
-  /portal                plan, usage meters, activate license, support, downloads
-  /portal/billing        manage sub, buy hour packs, change plan, invoices
-  /portal/activate       paste 25-char key
-  /portal/support        tickets list + thread view
-  /app                   analyzer (gated by entitlements.activated)
+**B. During the hand:**
+- Add hole cards once dealt.
+- Standard tier: hit **Best play** when it's your turn.
+- Pro tier: leave **Go Live** on — the verdict updates automatically and locks the moment it's your action.
 
-_authenticated/_admin
-  /admin/users           list, filter, search
-  /admin/users/:id       toggles for plan + addons, usage, reset license, suspend/freeze
-  /admin/tickets         queue
-  /admin/billing         failed payments, manual activations
-  /admin/audit
-```
+**C. Troubleshooting:**
+- Verdict feels stale → confirm the timer chip says "Reading…"; re-share the correct window.
+- Cards not detected → drag the capture region tighter, increase your client's card size.
+- Verdict flipped between turns → *now fixed; see release notes*. If you still see it, file a ticket from `/portal`.
+- Voice silent (Pro) → enable mic permission for the browser tab.
 
-## 6. Database changes (new tables)
+Add to `SiteNav` and `SiteFooter`.
 
-```text
-license_keys(id, user_id, key_hash, plan, addons[], status, generated_at, activated_at, revoked_at)
-usage_events(id, user_id, kind, qty, session_id, ts)         -- kind: scan|golive_min
-hour_packs(id, user_id, hours, hours_remaining, expires_at, purchased_at)
-support_tickets(id, user_id, category, subject, status, assigned_admin, created_at, updated_at)
-ticket_messages(id, ticket_id, author_id, body, created_at)
-payments(id, user_id, provider, amount_cents, currency, kind, stripe_event_id, paypal_id, status, ts)
-```
-All with RLS scoped to `auth.uid()` + admin override via `has_role`. Key stored hashed; only emailed in plaintext once.
+---
 
-## 7. Visual overhaul — "Obsidian & Arcane Purple"
+## 5. **BUG FIX — "Phantom Fold" in Go-Live**
 
-- Update `src/styles.css` tokens: background `#0a0612`, surface `#1a0f2e`, primary `#6b21a8` (arcane purple), accent `#d4a84c` (rune gold). Drop the bright matrix green to a *muted* secondary used only for "go" states.
-- Typography: keep Orbitron headings + JetBrains Mono data, add `Cinzel` for landing headlines (rune-y serif).
-- New hero illustration (generated): hooded paladin holding a staff wrapped in shredded playing-card shreds, purple smoke, gold sigils. Used on `/`, `/pricing`, and as portal avatar.
-- Card / button surfaces get subtle purple→gold gradient borders, sigil watermarks on hero sections.
-- Re-skin analyzer chrome to match (panels, badges, "WHAT TO DO" still high-contrast but in gold-on-deep-purple).
+**Symptom (user-reported):** While Go-Live is running, the panel correctly says "Raise/Call", then between actions flips to "Fold" before it's the hero's turn again. Disorienting and damages trust.
 
-## 8. Payments wiring
+**Root cause** (`src/components/poker/Recommendation.tsx`):
+The auto-recompute `useEffect` runs on every change to `heroKey/boardKey/pot/toCall/heroToAct/activeOpponents.length` regardless of whose turn it is. As opponents act, `toCall`/`pot` mutate, `decide()` re-runs against a state where it's not the hero's decision, and the worst-case branch resolves to **Fold**, overwriting the previously shown verdict.
 
-- **Stripe seamless** for cards + Apple/Google Pay (recurring subs + one-time hour packs).
-- **PayPal** via PayPal JS SDK button on checkout (subs + one-time).
-- **Crypto** = disabled "Coming Soon" tile linking to FAQ entry.
-- One webhook route per provider under `/api/public/` with signature verification → both feed the same `handlePaymentSuccess` server fn → license-key generation.
+**Fix (frontend-only, surgical):**
+1. **Gate the auto-run on `heroToAct`:** only call `run()` when `ready && !busy && heroToAct`. When `heroToAct === false`, leave the existing `result` mounted *only* if it was computed for the current street; otherwise clear it.
+2. **Stamp each result with a street/board signature.** Track `lastSolvedKey = boardKey + heroKey`. On opponent action (board unchanged, heroToAct false), keep the last verdict frozen and dim it with a "Locked — waiting for your turn" badge instead of recomputing.
+3. **On board change while not hero's turn** (new flop/turn/river dealt while folded): clear `result` and show "Waiting for your turn" — never display a stale verdict from a previous street.
+4. **Remove the eslint-disable line** once deps are corrected.
 
-## 9. Phased build order
+This eliminates the phantom Fold entirely: the panel only ever shows a verdict that was computed for *this hero, this street, this decision point*.
 
-1. **Theme + landing/marketing pages** (visual overhaul + paladin hero + FAQ + disclaimer + refund + demo) — shippable first, validates direction.
-2. **DB schema** (license_keys, usage_events, hour_packs, tickets, payments).
-3. **Stripe seamless enable** + products + checkout + webhook + license-key generation + confirmation email.
-4. **Portal: activate license, usage meters, billing screen**.
-5. **Entitlement gates** on `/app` (analyzer + Go-Live + voice) + usage metering writes.
-6. **Support tickets** (user + admin sides, realtime).
-7. **Admin portal** (user CRUD, plan/addon toggles, ticket queue, audit log).
-8. **PayPal** added to checkout.
-9. **Crypto placeholder + Changelly affiliate link**.
+---
 
-## 10. Open items to confirm before I start
+## 6. Files touched
 
-1. Voice Companion — bundled in Pro for free, or +$10/mo addon? (Your $89 example suggested addon; my plan put $149.99 Pro with voice included. Pick one.)
-2. Go-Live hours included with Pro: **60/mo** OK? (≈14 hrs/week)
-3. Hour pack price: **$14.99 / 10 hrs** OK?
-4. Standard daily scan cap: **250** OK?
-5. Should the demo page require email capture (lead-gen) or be fully anonymous?
+- `src/routes/index.tsx` — hero copy, features, add-on card, trust block.
+- `src/routes/pricing.tsx` — Focus Lens rename + copy.
+- `src/components/poker/GameSetup.tsx` — button + subhead.
+- `src/components/poker/Recommendation.tsx` — phantom-Fold fix.
+- `src/routes/how-to-play.tsx` — **new**.
+- `src/routes/user-guide.tsx` — **new**.
+- `src/routeTree.gen.ts` — register the two new routes.
+- `SiteNav` / `SiteFooter` (inside `index.tsx`) — add Guide + How to Play links.
+
+No DB, no backend, no new packages. Pure UI + one logic fix.
+
+---
+
+## What's NOT in this phase
+
+- Phase 2 (Stripe/PayPal webhooks, license keys, usage metering, support tickets, admin portal) — untouched, picks up next.
+- Demo video loop — explicitly skipped per your pick.
+- Voice Companion bundling decision — still open from earlier; will confirm at start of Phase 2.

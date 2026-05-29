@@ -2,9 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import type { GameApi } from "@/lib/poker/useGame";
 import { decide, readProfile, fieldLooseness, type Decision } from "@/lib/poker/strategy";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { Calculator, ChevronDown } from "lucide-react";
+import { Calculator, ChevronDown, Lock } from "lucide-react";
 
 const VERDICT_STYLE: Record<string, string> = {
   Fold: "bg-[oklch(0.35_0.02_160)] text-foreground",
@@ -41,20 +40,41 @@ function whatToDo(d: Decision, pot: number): string {
   }
 }
 
+interface StampedResult {
+  decision: Decision;
+  // Signature of the table state this verdict was computed against. If the
+  // street/board changes (a new community card is dealt, hero's cards change),
+  // any frozen verdict becomes stale and must be cleared — never shown again.
+  key: string;
+}
 
 export function Recommendation({ game }: { game: GameApi }) {
   const { variant, hero, board, pot, toCall, blind, heroSeat, activeOpponents, profiles, config, heroToAct } = game;
-  const [result, setResult] = useState<Decision | null>(null);
+  const [result, setResult] = useState<StampedResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [showLayers, setShowLayers] = useState(false);
 
   const minHole = variant.holeCount === 7 ? 2 : variant.holeCount;
   const ready = hero.length >= Math.min(2, minHole);
 
+  // Stable identifiers for the table state. Pot/toCall mutate as opponents
+  // act, so they are NOT part of the street key — only cards are.
+  const heroKey = hero.map((c) => `${c.r}${c.s}`).join("");
+  const boardKey = board.map((c) => `${c.r}${c.s}`).join("");
+  const streetKey = `${heroKey}|${boardKey}`;
+
+  // If the street advances (new card on board, or hero cards changed) and
+  // we are NOT to act, drop any stale verdict so the panel doesn't display
+  // a recommendation that was computed for a different situation.
+  useEffect(() => {
+    if (!heroToAct && result && result.key !== streetKey) {
+      setResult(null);
+    }
+  }, [streetKey, heroToAct, result]);
+
   const run = () => {
     if (!ready) return;
     setBusy(true);
-    // let the button paint, then crunch
     setTimeout(() => {
       const reads = activeOpponents.map((p) => readProfile(profiles[p.name] ?? {
         name: p.name, hands: 0, vpipHands: 0, pfrHands: 0, aggressive: 0, passive: 0, folds: 0, notes: "",
@@ -68,39 +88,46 @@ export function Recommendation({ game }: { game: GameApi }) {
         heroStack: heroSeat?.stack ?? config.startingStack,
         bb: blind.bb,
       });
-      setResult(d);
+      setResult({ decision: d, key: streetKey });
       setBusy(false);
     }, 10);
   };
 
-  // Auto-recompute the play whenever the table state changes (cards, board,
-  // pot, to-call) or it becomes the hero's turn — keeps "best play" current
-  // with every auto-analyze pass.
-  const heroKey = hero.map((c) => `${c.r}${c.s}`).join("");
-  const boardKey = board.map((c) => `${c.r}${c.s}`).join("");
+  // Auto-recompute ONLY when it's actually the hero's turn to act. Between
+  // turns we leave the last verdict frozen (or cleared if the street moved),
+  // so the panel never flips to a phantom "Fold" because opponents acted.
   useEffect(() => {
-    if (ready && !busy) run();
+    if (ready && !busy && heroToAct) run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heroKey, boardKey, pot, toCall, heroToAct, activeOpponents.length]);
+  }, [streetKey, pot, toCall, heroToAct, activeOpponents.length]);
+
+  const decision = result?.decision ?? null;
+  const stale = !!(result && result.key !== streetKey);
+  const frozen = !!(result && !heroToAct && !stale);
+  const showVerdict = !!decision && !stale;
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
       {/* WHAT TO DO — big red call-out, front and center */}
       <div
-
         className={cn(
           "mt-3 rounded-xl border-2 p-3 text-center transition",
-          result
+          showVerdict
             ? "border-[oklch(0.58_0.24_27)] bg-[oklch(0.2_0.08_27)]"
-            : "border-border bg-secondary/20"
+            : "border-border bg-secondary/20",
+          frozen && "opacity-70"
         )}
       >
         <div className="font-data text-[10px] font-bold uppercase tracking-[0.3em] text-[oklch(0.7_0.2_27)]">
-          What to do
+          {frozen ? (
+            <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" /> Locked · waiting for your turn</span>
+          ) : (
+            "What to do"
+          )}
         </div>
-        {result ? (
+        {showVerdict && decision ? (
           <div className="font-display text-3xl font-black uppercase leading-tight text-[oklch(0.68_0.24_27)] drop-shadow-[0_0_12px_oklch(0.58_0.24_27/0.5)]">
-            {whatToDo(result, pot)}
+            {whatToDo(decision, pot)}
           </div>
         ) : (
           <div className="font-display text-lg font-bold text-muted-foreground">
@@ -115,18 +142,18 @@ export function Recommendation({ game }: { game: GameApi }) {
       </Button>
       {!ready && <p className="mt-2 text-center text-xs text-muted-foreground">Add your hole cards first.</p>}
 
-      {result && (
+      {showVerdict && decision && (
         <div className="mt-3 space-y-3">
-          <div className={cn("rounded-lg px-3 py-2 text-center text-lg font-extrabold uppercase tracking-wide", VERDICT_STYLE[result.verdict])}>
-            {result.verdict}
+          <div className={cn("rounded-lg px-3 py-2 text-center text-lg font-extrabold uppercase tracking-wide", VERDICT_STYLE[decision.verdict])}>
+            {decision.verdict}
           </div>
-          <p className="text-sm font-semibold">{result.headline}</p>
-          <p className="text-xs text-muted-foreground">{result.detail}</p>
+          <p className="text-sm font-semibold">{decision.headline}</p>
+          <p className="text-xs text-muted-foreground">{decision.detail}</p>
 
           <div className="grid grid-cols-3 gap-2 text-center">
-            <Stat label="Your equity" value={`${(result.equity * 100).toFixed(0)}%`} tone="win" />
-            <Stat label="Need" value={result.requiredEquity > 0 ? `${(result.requiredEquity * 100).toFixed(0)}%` : "—"} />
-            <Stat label="EV call" value={`${result.evCall >= 0 ? "+" : ""}${result.evCall.toFixed(0)}`} tone={result.evCall >= 0 ? "win" : "lose"} />
+            <Stat label="Your equity" value={`${(decision.equity * 100).toFixed(0)}%`} tone="win" />
+            <Stat label="Need" value={decision.requiredEquity > 0 ? `${(decision.requiredEquity * 100).toFixed(0)}%` : "—"} />
+            <Stat label="EV call" value={`${decision.evCall >= 0 ? "+" : ""}${decision.evCall.toFixed(0)}`} tone={decision.evCall >= 0 ? "win" : "lose"} />
           </div>
 
           <button onClick={() => setShowLayers((s) => !s)} className="flex w-full items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground">
@@ -136,11 +163,11 @@ export function Recommendation({ game }: { game: GameApi }) {
 
           {showLayers && (
             <div className="space-y-2 rounded-lg bg-secondary/40 p-3 text-xs text-muted-foreground">
-              {result.shove ? (
+              {decision.shove ? (
                 <p>
                   <span className="font-semibold text-foreground">Push/fold:</span> at this stack the standard
-                  shove range is the top {(result.shove.pushFraction * 100).toFixed(0)}%. Your hand sits in the
-                  top {(result.shove.handPct * 100).toFixed(0)}% — {result.shove.advised ? "inside the jam range." : "outside it; fold or play small."}
+                  shove range is the top {(decision.shove.pushFraction * 100).toFixed(0)}%. Your hand sits in the
+                  top {(decision.shove.handPct * 100).toFixed(0)}% — {decision.shove.advised ? "inside the jam range." : "outside it; fold or play small."}
                 </p>
               ) : (
                 <p>Stack is deep enough for postflop play — push/fold charts not in effect.</p>
