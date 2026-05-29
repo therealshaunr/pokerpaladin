@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import type { GameApi } from "@/lib/poker/useGame";
-import { analyzeTable } from "@/lib/poker/vision.functions";
+import { analyzeTable, type VisionResult } from "@/lib/poker/vision.functions";
 import { parseCard, cardKey, type Card } from "@/lib/poker/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MonitorUp, Radio, X, Zap } from "lucide-react";
+import { MonitorUp, Pause, Play, Radio, X, Zap, Moon } from "lucide-react";
 
 const GO_LIVE_POLL_MS = 2500; // pro: real-time-ish
+const IDLE_THRESHOLD = 3; // consecutive empty reads -> standby
 
 interface Props {
   game: GameApi;
@@ -26,6 +27,17 @@ export interface SharedShare {
   runAnalyze: (reason: string) => Promise<void>;
   busy: boolean;
   lastRead: string;
+  paused: boolean;
+  setPaused: (p: boolean) => void;
+  standby: boolean;
+  resumeFromStandby: () => void;
+  tableActive: boolean;
+}
+
+function isTableActive(res: VisionResult): boolean {
+  const seated = res.seats.filter((s) => !s.isEmpty).length;
+  const withCards = res.seats.filter((s) => s.hasCards).length;
+  return seated >= 2 || withCards >= 1 || res.heroToAct || (res.pot ?? 0) > 0;
 }
 
 export function useSharedShare(game: GameApi): SharedShare {
@@ -33,16 +45,24 @@ export function useSharedShare(game: GameApi): SharedShare {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const busyRef = useRef(false);
+  const emptyReadsRef = useRef(0);
   const [sharing, setSharing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [lastRead, setLastRead] = useState("");
+  const [paused, setPaused] = useState(false);
+  const [standby, setStandby] = useState(false);
+  const [tableActive, setTableActive] = useState(false);
   const analyze = useServerFn(analyzeTable);
 
   const stopShare = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     setSharing(false);
+    setStandby(false);
+    setPaused(false);
+    setTableActive(false);
+    emptyReadsRef.current = 0;
     setStatus("");
   };
 
@@ -55,6 +75,9 @@ export function useSharedShare(game: GameApi): SharedShare {
         await videoRef.current.play();
       }
       setSharing(true);
+      setStandby(false);
+      setPaused(false);
+      emptyReadsRef.current = 0;
       setStatus("Screen connected — initial scan in 1s…");
       stream.getVideoTracks()[0].addEventListener("ended", stopShare);
       setTimeout(() => runAnalyze("deal-in"), 1200);
@@ -114,8 +137,21 @@ export function useSharedShare(game: GameApi): SharedShare {
         clockSeconds: res.clockSeconds,
         heroToAct: res.heroToAct,
       });
+
+      const active = isTableActive(res);
+      setTableActive(active);
+      if (active) {
+        emptyReadsRef.current = 0;
+      } else {
+        emptyReadsRef.current += 1;
+        if (emptyReadsRef.current >= IDLE_THRESHOLD) {
+          setStandby(true);
+          setStatus("Table idle — STANDBY. Auto-scan paused to save credits.");
+        }
+      }
+
       setLastRead(`${holeCards.length} hole · ${boardCards.length} board · ${res.seats.length} seats${res.notes ? " — " + res.notes : ""}`);
-      setStatus(`Updated ${new Date().toLocaleTimeString()}.`);
+      if (!standby) setStatus(`Updated ${new Date().toLocaleTimeString()}.`);
     } catch (e) {
       setStatus(e instanceof Error ? e.message : "Vision failed.");
     } finally {
@@ -124,21 +160,33 @@ export function useSharedShare(game: GameApi): SharedShare {
     }
   };
 
+  const resumeFromStandby = () => {
+    setStandby(false);
+    setPaused(false);
+    emptyReadsRef.current = 0;
+    setStatus("Resumed — scanning again.");
+    setTimeout(() => runAnalyze("resume"), 200);
+  };
+
   useEffect(() => () => stopShare(), []);
 
-  return { videoRef, sharing, startShare, stopShare, status, setStatus, runAnalyze, busy, lastRead };
+  return {
+    videoRef, sharing, startShare, stopShare, status, setStatus,
+    runAnalyze, busy, lastRead, paused, setPaused, standby, resumeFromStandby, tableActive,
+  };
 }
 
 export function GoLivePanel({ tier, shared }: Props) {
   const [live, setLive] = useState(false);
   const isPro = tier === "pro";
+  const blocked = shared.paused || shared.standby;
 
   useEffect(() => {
-    if (!live || !shared.sharing || !isPro) return;
+    if (!live || !shared.sharing || !isPro || blocked) return;
     const id = setInterval(() => shared.runAnalyze("go-live"), GO_LIVE_POLL_MS);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [live, shared.sharing, isPro]);
+  }, [live, shared.sharing, isPro, blocked]);
 
   return (
     <div className={cn(
@@ -149,16 +197,16 @@ export function GoLivePanel({ tier, shared }: Props) {
       <div className="relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Zap className={cn("h-5 w-5", isPro ? "text-wizard" : "text-gold")} />
+            <Zap className={cn("h-6 w-6", isPro ? "text-wizard" : "text-gold")} />
             <div>
-              <div className="font-display text-lg font-black uppercase tracking-wide">GO LIVE</div>
-              <div className="font-data text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
+              <div className="font-display text-xl font-black uppercase tracking-wide">GO LIVE</div>
+              <div className="font-data text-xs uppercase tracking-[0.3em] text-muted-foreground">
                 {isPro ? "Pro · real-time render" : "Pro tier required"}
               </div>
             </div>
           </div>
           {shared.sharing && (
-            <button onClick={shared.stopShare} className="text-muted-foreground hover:text-foreground">
+            <button onClick={shared.stopShare} className="text-muted-foreground hover:text-foreground" aria-label="Disconnect">
               <X className="h-4 w-4" />
             </button>
           )}
@@ -173,31 +221,57 @@ export function GoLivePanel({ tier, shared }: Props) {
         />
 
         {!shared.sharing ? (
-          <Button onClick={shared.startShare} className="mt-3 w-full gap-2 font-bold">
-            <MonitorUp className="h-4 w-4" /> Connect screen
+          <Button onClick={shared.startShare} className="mt-3 w-full gap-2 font-bold text-base">
+            <MonitorUp className="h-5 w-5" /> Connect screen
           </Button>
-        ) : isPro ? (
-          <button
-            onClick={() => setLive((v) => !v)}
-            className={cn(
-              "mt-3 flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-base font-black uppercase tracking-wider transition",
-              live ? "bg-wizard text-white glow-wizard" : "wizard-gradient text-white hover:opacity-90"
-            )}
-          >
-            <Radio className={cn("h-5 w-5", live && "live-dot rounded-full")} />
-            {live ? "LIVE — watching every 2.5s" : "Go LIVE"}
-          </button>
         ) : (
-          <div className="mt-3 rounded-lg border border-wizard/40 bg-wizard/10 p-3 text-center">
-            <p className="text-xs text-muted-foreground">
-              <span className="text-wizard font-semibold">GO LIVE</span> rescans the table every 2.5 seconds so you read the action in near real-time.
-            </p>
-            <a href="/pricing" className="mt-2 inline-block rounded-md bg-wizard px-3 py-1.5 text-xs font-bold text-white hover:opacity-90">Upgrade to Pro</a>
-          </div>
+          <>
+            {shared.standby ? (
+              <div className="mt-3 rounded-lg border-2 border-dashed border-gold/40 bg-gold/5 p-4 text-center">
+                <Moon className="mx-auto h-6 w-6 text-gold" />
+                <div className="mt-2 font-display text-lg font-black uppercase">Standby</div>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Nobody at the table for a few scans — Paladin's resting. Hit resume when you sit back down.
+                </p>
+                <Button onClick={shared.resumeFromStandby} className="mt-3 w-full gap-2 font-bold">
+                  <Play className="h-4 w-4" /> Resume scanning
+                </Button>
+              </div>
+            ) : isPro ? (
+              <div className="mt-3 space-y-2">
+                <button
+                  onClick={() => setLive((v) => !v)}
+                  disabled={shared.paused}
+                  className={cn(
+                    "flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-lg font-black uppercase tracking-wider transition",
+                    shared.paused
+                      ? "bg-secondary text-muted-foreground"
+                      : live ? "bg-wizard text-white glow-wizard" : "wizard-gradient text-white hover:opacity-90"
+                  )}
+                >
+                  <Radio className={cn("h-5 w-5", live && !shared.paused && "live-dot rounded-full")} />
+                  {shared.paused ? "PAUSED" : live ? "LIVE — watching every 2.5s" : "Go LIVE"}
+                </button>
+                <button
+                  onClick={() => shared.setPaused(!shared.paused)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm font-bold uppercase tracking-wider text-foreground hover:bg-secondary"
+                >
+                  {shared.paused ? <><Play className="h-4 w-4" /> Resume auto-scan</> : <><Pause className="h-4 w-4" /> Pause auto-scan</>}
+                </button>
+              </div>
+            ) : (
+              <div className="mt-3 rounded-lg border border-wizard/40 bg-wizard/10 p-3 text-center">
+                <p className="text-sm text-muted-foreground">
+                  <span className="text-wizard font-semibold">GO LIVE</span> rescans the table every 2.5 seconds so you read the action in near real-time.
+                </p>
+                <a href="/pricing" className="mt-2 inline-block rounded-md bg-wizard px-3 py-1.5 text-sm font-bold text-white hover:opacity-90">Upgrade to Pro</a>
+              </div>
+            )}
+          </>
         )}
 
-        {shared.status && <p className="mt-2 font-data text-[11px] text-muted-foreground">{shared.status}</p>}
-        {shared.lastRead && <p className="mt-1 font-data text-[10px] text-wizard/80">↳ {shared.lastRead}</p>}
+        {shared.status && <p className="mt-2 font-data text-xs text-muted-foreground">{shared.status}</p>}
+        {shared.lastRead && <p className="mt-1 font-data text-xs text-wizard/80">↳ {shared.lastRead}</p>}
       </div>
     </div>
   );

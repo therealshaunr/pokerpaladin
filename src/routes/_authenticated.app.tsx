@@ -57,17 +57,17 @@ function AppPage() {
   if (!started) return <GameSetup onStart={start} />;
 
   return (
-    <div className="matrix-bg min-h-dvh px-4 py-6 text-[15px] md:text-[17px] leading-relaxed">
+    <div className="matrix-bg min-h-dvh px-4 py-6 text-[17px] md:text-[19px] leading-relaxed">
       <div className="relative z-10 mx-auto max-w-7xl space-y-6">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-2xl md:text-3xl font-black leading-none">
+            <h1 className="font-display text-3xl md:text-4xl font-black leading-none">
               POKER<span className="text-matrix"> CO-PILOT</span>
             </h1>
-            <p className="font-data text-sm text-muted-foreground">{variant.label} · {street} · {tier === "pro" ? "Pro" : "Standard"}</p>
+            <p className="font-data text-base text-muted-foreground">{variant.label} · {street} · {tier === "pro" ? "Pro" : "Standard"}</p>
           </div>
-          <Link to="/portal" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" /> Portal
+          <Link to="/portal" className="inline-flex items-center gap-1 text-base text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" /> Portal
           </Link>
         </header>
 
@@ -79,16 +79,18 @@ function AppPage() {
             <AllInOneEditor game={game} />
           </div>
 
-          {/* RIGHT: GO LIVE → Paladin Says → cards */}
+          {/* RIGHT: GO LIVE → your cards → Paladin Says → board */}
           <div className="space-y-6">
             <GoLivePanel game={game} tier={tier} shared={shared} />
-            <Recommendation game={game} />
-            <div className="space-y-4 rounded-xl border border-border bg-card p-5">
+            <div className="rounded-xl border border-border bg-card p-5">
               <CardPicker label="Your cards" cards={hero} max={variant.holeCount} disabledKeys={disabledKeys} onChange={setHero} />
-              {variant.community && (
-                <CardPicker label="Board" cards={board} max={variant.boardSize} disabledKeys={disabledKeys} onChange={setBoard} accent="muted" />
-              )}
             </div>
+            <Recommendation game={game} />
+            {variant.community && (
+              <div className="rounded-xl border border-border bg-card p-5">
+                <CardPicker label="Board" cards={board} max={variant.boardSize} disabledKeys={disabledKeys} onChange={setBoard} accent="muted" />
+              </div>
+            )}
           </div>
         </div>
 
