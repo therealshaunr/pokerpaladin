@@ -22,7 +22,7 @@ export function GameSetup({ onStart }: { onStart: (cfg: GameConfig) => void }) {
           </h1>
           <p className="font-data text-sm text-muted-foreground">Pick your game and deal in.</p>
         </div>
-
+          <p className="font-data text-sm text-muted-foreground">Pick your game. Set your blinds. Summon the paladin.</p>
         <div className="space-y-5 rounded-2xl border border-border bg-card p-5">
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Game</label>
@@ -50,9 +50,9 @@ export function GameSetup({ onStart }: { onStart: (cfg: GameConfig) => void }) {
 
           <Button onClick={() => onStart(cfg)} className="w-full text-base font-bold">
             Deal in →
+          <Button onClick={() => onStart(cfg)} className="w-full text-base font-bold">
+            Summon the Paladin →
           </Button>
-        </div>
-      </div>
     </div>
   );
 }

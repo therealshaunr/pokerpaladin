@@ -70,7 +70,7 @@ function Pricing() {
           <p className="mt-1 text-sm text-muted-foreground">Toggle these on or off any time from your portal.</p>
           <div className="mt-5 grid gap-4 md:grid-cols-4">
             <AddOnCard icon={Mic} name="Voice Companion" price="$10 / mo" desc="Whispered call/fold/raise on every street. Pro only — included in Pro by default." />
-            <AddOnCard icon={Puzzle} name="Chrome Extension" price="$10 / mo" desc="Capture a single browser tab instead of full screen share." />
+            <AddOnCard icon={Puzzle} name="Focus Lens" price="$10 / mo" desc="Capture a single window you choose — not your whole screen. Read-only pixel capture; never touches the betting site." />
             <AddOnCard icon={Smartphone} name="Mobile Renderer" price="$8 / mo" desc="Mirror the verdict to your phone via a secure pair code." />
             <AddOnCard icon={Clock} name="10-Hour Pack" price="$14.99 once" desc="+10 Go-Live hours, valid 90 days. Stacks with Pro." />
           </div>

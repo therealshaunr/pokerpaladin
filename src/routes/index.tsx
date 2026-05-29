@@ -28,18 +28,18 @@ function Landing() {
             <h1 className="mt-4 font-display text-4xl font-black leading-[1.05] md:text-6xl">
               Summon the <span className="text-wizard">paladin</span><br />
               of <span className="text-gold">cold, hard odds.</span>
+            <h1 className="mt-4 font-display text-4xl font-black leading-[1.05] md:text-6xl">
+              Summon the <span className="text-wizard">paladin</span><br />
+              of <span className="text-gold">cold, hard odds.</span>
             </h1>
             <p className="mt-5 max-w-xl text-base text-muted-foreground md:text-lg">
-              A novelty training tool for serious players. Share your screen, the paladin reads the table every five seconds, runs the math, and whispers the play — call, fold, raise, or shove.
+              Poker Paladin tracks every card, bet, and tell on your screen in as close to real time as possible. Standard players read the table. <span className="text-wizard font-semibold">The Arcanum</span> reads the players reading the table. Want millisecond reactions and live in-hand calls? You'll need to go <span className="text-gold font-semibold">Pro</span>.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link to="/pricing"><Button size="lg" className="font-bold">View pricing →</Button></Link>
               <Link to="/demo"><Button size="lg" variant="secondary">Try the demo</Button></Link>
+              <Link to="/how-to-play"><Button size="lg" variant="ghost">New to poker?</Button></Link>
             </div>
-            <p className="mt-5 flex items-center gap-2 text-xs text-muted-foreground">
-              <ShieldAlert className="h-3.5 w-3.5 text-gold" />
-              Training & analysis only. We never read game code, scrape sites, or inject software.
-            </p>
           </div>
           <div className="order-1 md:order-2">
             <div className="arcane-border glow-wizard mx-auto max-w-md overflow-hidden">
@@ -62,11 +62,11 @@ function Landing() {
             { icon: Radio, t: "Go Live (Pro)", d: "Auto-refresh every 5s. The verdict is on screen the moment it's your turn to act." },
           ].map((f) => (
             <div key={f.t} className="arcane-border p-5">
-              <f.icon className="h-6 w-6 text-gold" />
-              <div className="mt-3 font-display text-lg font-bold">{f.t}</div>
-              <p className="mt-1 text-sm text-muted-foreground">{f.d}</p>
-            </div>
-          ))}
+          {[
+            { icon: ScanEye, t: "Reads the table", d: "Hole cards, board, pot and stacks — extracted from your shared screen automatically." },
+            { icon: BarChart3, t: "Honest math", d: "Monte-Carlo equity, premium pre-flop floors, pot-fraction sizing on every decision." },
+            { icon: Radio, t: "Go Live (Pro)", d: "The first sub-second poker co-pilot. Re-reads the table every heartbeat and surfaces the play before your timer ticks. This is what separates a standard player from The Arcanum." },
+          ].map((f) => (
         </section>
 
         {/* PRICING TEASER */}
@@ -96,11 +96,11 @@ function Landing() {
             <AddOn icon={Smartphone} name="Mobile Renderer" price="$8/mo" desc="Mirror the verdict to your phone via a pair code." />
           </div>
           <div className="mt-6 text-center">
-            <Link to="/pricing"><Button variant="outline" size="lg">Full pricing & add-ons →</Button></Link>
+          <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <AddOn icon={Mic} name="Voice Companion" price="$10/mo" desc="Whispered verdict on every street. Pro only." />
+            <AddOn icon={Puzzle} name="Focus Lens" price="$10/mo" desc="Capture a single window you choose — not your whole screen. Read-only pixel capture; never touches the site." />
+            <AddOn icon={Smartphone} name="Mobile Renderer" price="$8/mo" desc="Mirror the verdict to your phone via a pair code." />
           </div>
-        </section>
-
-        {/* TRUST */}
         <section className="arcane-border my-10 p-6 md:p-8">
           <div className="flex items-start gap-4">
             <Sparkles className="h-6 w-6 shrink-0 text-gold" />
@@ -112,14 +112,20 @@ function Landing() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <Link to="/faq"><Button variant="ghost" size="sm">FAQ</Button></Link>
                 <Link to="/disclaimer"><Button variant="ghost" size="sm">Disclaimer</Button></Link>
+              <h3 className="font-display text-xl font-bold">What this is — and isn't.</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Poker Paladin is a novelty training & analysis companion. It watches the screen <em>you</em> are already looking at, the same way a coach over your shoulder would. It does not bot, scrape, inject, or communicate with any poker site. It cannot act for you. You are always the one clicking the button.
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                <span className="text-gold font-semibold">Focus Lens</span> is a window-scoped screen capture — not a browser extension. Nothing is ever installed into the poker site's page.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link to="/user-guide"><Button variant="ghost" size="sm">User guide</Button></Link>
+                <Link to="/how-to-play"><Button variant="ghost" size="sm">How to play</Button></Link>
+                <Link to="/faq"><Button variant="ghost" size="sm">FAQ</Button></Link>
+                <Link to="/disclaimer"><Button variant="ghost" size="sm">Disclaimer</Button></Link>
                 <Link to="/refund-policy"><Button variant="ghost" size="sm">Refund policy</Button></Link>
               </div>
-            </div>
-          </div>
-        </section>
-
-        <SiteFooter />
-      </div>
     </main>
   );
 }
@@ -178,12 +184,13 @@ export function SiteNav() {
         </div>
         <div className="flex items-center gap-2">
           <Link to="/login"><Button variant="ghost" size="sm">Sign in</Button></Link>
-          <Link to="/login" search={{ redirect: "/portal" }}><Button size="sm">Get started</Button></Link>
+        <div className="hidden items-center gap-1 md:flex">
+          <Link to="/pricing"><Button variant="ghost" size="sm">Pricing</Button></Link>
+          <Link to="/demo"><Button variant="ghost" size="sm">Demo</Button></Link>
+          <Link to="/how-to-play"><Button variant="ghost" size="sm">How to play</Button></Link>
+          <Link to="/user-guide"><Button variant="ghost" size="sm">Guide</Button></Link>
+          <Link to="/faq"><Button variant="ghost" size="sm">FAQ</Button></Link>
         </div>
-      </nav>
-    </div>
-  );
-}
 
 export function SiteFooter() {
   return (
@@ -199,3 +206,12 @@ export function SiteFooter() {
     </footer>
   );
 }
+      <div className="flex flex-wrap justify-center gap-4">
+        <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
+        <Link to="/how-to-play" className="hover:text-foreground">How to play</Link>
+        <Link to="/user-guide" className="hover:text-foreground">User guide</Link>
+        <Link to="/faq" className="hover:text-foreground">FAQ</Link>
+        <Link to="/disclaimer" className="hover:text-foreground">Disclaimer</Link>
+        <Link to="/refund-policy" className="hover:text-foreground">Refunds</Link>
+        <Link to="/demo" className="hover:text-foreground">Demo</Link>
+      </div>
