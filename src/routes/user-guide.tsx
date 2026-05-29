@@ -73,15 +73,15 @@ function UserGuide() {
         <Section icon={AlertTriangle} title="C · Troubleshooting">
           <Trouble
             symptom="Verdict feels stale or out of date."
-            fix="Confirm the timer chip says \"Reading…\". If it's stuck, stop sharing and re-share the correct window."
+            fix={'Confirm the timer chip says "Reading…". If it\'s stuck, stop sharing and re-share the correct window.'}
           />
           <Trouble
             symptom="Cards aren't being detected."
             fix="Drag the capture region tighter around the cards. Increase your client's card size in display settings. Make sure your poker window isn't behind another window."
           />
           <Trouble
-            symptom="The paladin flipped from \"Raise\" to \"Fold\" while I was waiting."
-            fix="Fixed in this release — the panel now freezes the last verdict and shows a \"Waiting for your turn\" badge between actions. If you still see flipping, open a support ticket from your portal with a screenshot."
+            symptom={'The paladin flipped from "Raise" to "Fold" while I was waiting.'}
+            fix={'Fixed in this release — the panel now freezes the last verdict and shows a "Waiting for your turn" badge between actions. If you still see flipping, open a support ticket from your portal with a screenshot.'}
           />
           <Trouble
             symptom="No voice in Go Live (Pro)."
