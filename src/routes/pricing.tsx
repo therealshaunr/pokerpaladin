@@ -1,7 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Check, Mic, Puzzle, Smartphone, Clock, Bitcoin } from "lucide-react";
 import { SiteNav, SiteFooter } from "./index";
+import { useAuth } from "@/lib/auth";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -16,8 +21,21 @@ export const Route = createFileRoute("/pricing")({
 });
 
 function Pricing() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [activePrice, setActivePrice] = useState<string | null>(null);
+
+  const buy = (priceId: string) => {
+    if (!user) {
+      navigate({ to: "/login", search: { redirect: `/pricing?buy=${priceId}` } });
+      return;
+    }
+    setActivePrice(priceId);
+  };
+
   return (
     <main className="matrix-bg min-h-dvh">
+      <PaymentTestModeBanner />
       <SiteNav />
       <div className="relative z-10 mx-auto max-w-6xl px-4">
         <header className="py-12 text-center">
@@ -30,6 +48,7 @@ function Pricing() {
         <section className="grid gap-5 md:grid-cols-2">
           <Tier
             name="Standard"
+            priceId="std_monthly"
             price="$79.99"
             tagline="For the casual / weekend player"
             features={[
@@ -41,9 +60,11 @@ function Pricing() {
               "Email + in-portal support tickets",
             ]}
             notIncluded={["Go Live auto-refresh", "Voice companion", "Session export"]}
+            onBuy={buy}
           />
           <Tier
             name="Pro"
+            priceId="pro_monthly"
             price="$149.99"
             tagline="For the serious grinder · 60 Go-Live hours / month"
             highlight
@@ -57,6 +78,7 @@ function Pricing() {
               "First-in-line support",
             ]}
             notIncluded={[]}
+            onBuy={buy}
           />
         </section>
 
@@ -69,10 +91,10 @@ function Pricing() {
           <h2 className="font-display text-2xl font-black">Add-ons</h2>
           <p className="mt-1 text-sm text-muted-foreground">Toggle these on or off any time from your portal.</p>
           <div className="mt-5 grid gap-4 md:grid-cols-4">
-            <AddOnCard icon={Mic} name="Voice Companion" price="$10 / mo" desc="Whispered call/fold/raise on every street. Pro only — included in Pro by default." />
-            <AddOnCard icon={Puzzle} name="Focus Lens" price="$10 / mo" desc="Capture a single window you choose — not your whole screen. Read-only pixel capture; never touches the betting site." />
-            <AddOnCard icon={Smartphone} name="Mobile Renderer" price="$8 / mo" desc="Mirror the verdict to your phone via a secure pair code." />
-            <AddOnCard icon={Clock} name="10-Hour Pack" price="$14.99 once" desc="+10 Go-Live hours, valid 90 days. Stacks with Pro." />
+            <AddOnCard icon={Mic} name="Voice Companion" price="$10 / mo" priceId="addon_voice_monthly" desc="Whispered call/fold/raise on every street. Pro only — included in Pro by default." onBuy={buy} />
+            <AddOnCard icon={Puzzle} name="Focus Lens" price="$10 / mo" priceId="addon_focus_lens_monthly" desc="Capture a single window you choose — not your whole screen. Read-only pixel capture; never touches the betting site." onBuy={buy} />
+            <AddOnCard icon={Smartphone} name="Mobile Renderer" price="$8 / mo" priceId="addon_mobile_monthly" desc="Mirror the verdict to your phone via a secure pair code." onBuy={buy} />
+            <AddOnCard icon={Clock} name="10-Hour Pack" price="$14.99 once" priceId="topup_10h_onetime" desc="+10 Go-Live hours, valid 90 days. Stacks with Pro." onBuy={buy} />
           </div>
         </section>
 
@@ -103,17 +125,39 @@ function Pricing() {
         </section>
 
         <div className="my-12 text-center">
-          <Link to="/login" search={{ redirect: "/portal" }}><Button size="lg" className="font-bold">Create your account →</Button></Link>
+          {user ? (
+            <Link to="/portal"><Button size="lg" className="font-bold">Open your portal →</Button></Link>
+          ) : (
+            <Link to="/login" search={{ redirect: "/portal" }}><Button size="lg" className="font-bold">Create your account →</Button></Link>
+          )}
           <p className="mt-3 text-xs text-muted-foreground">Or <Link to="/demo" className="text-gold underline">try the demo first</Link> — no signup required.</p>
         </div>
 
         <SiteFooter />
       </div>
+
+      <Dialog open={!!activePrice} onOpenChange={(o) => !o && setActivePrice(null)}>
+        <DialogContent className="max-w-3xl p-0">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle className="font-display">Summon the Paladin</DialogTitle>
+          </DialogHeader>
+          {activePrice && user && (
+            <div className="px-2 pb-2">
+              <StripeEmbeddedCheckout
+                priceId={activePrice}
+                userId={user.id}
+                customerEmail={user.email ?? undefined}
+                returnUrl={`${window.location.origin}/checkout/return?session_id={CHECKOUT_SESSION_ID}`}
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
 
-function Tier({ name, price, tagline, features, notIncluded, highlight }: { name: string; price: string; tagline: string; features: string[]; notIncluded: string[]; highlight?: boolean }) {
+function Tier({ name, priceId, price, tagline, features, notIncluded, highlight, onBuy }: { name: string; priceId: string; price: string; tagline: string; features: string[]; notIncluded: string[]; highlight?: boolean; onBuy: (id: string) => void }) {
   return (
     <div className={`arcane-border p-7 ${highlight ? "glow-wizard" : ""}`}>
       <div className="flex items-baseline justify-between">
@@ -138,20 +182,19 @@ function Tier({ name, price, tagline, features, notIncluded, highlight }: { name
           </li>
         ))}
       </ul>
-      <Link to="/login" search={{ redirect: "/portal" }} className="mt-6 block">
-        <Button className="w-full font-bold" size="lg">Choose {name}</Button>
-      </Link>
+      <Button onClick={() => onBuy(priceId)} className="mt-6 w-full font-bold" size="lg">Summon the Paladin →</Button>
     </div>
   );
 }
 
-function AddOnCard({ icon: Icon, name, price, desc }: { icon: typeof Mic; name: string; price: string; desc: string }) {
+function AddOnCard({ icon: Icon, name, price, priceId, desc, onBuy }: { icon: typeof Mic; name: string; price: string; priceId: string; desc: string; onBuy: (id: string) => void }) {
   return (
-    <div className="arcane-border p-5">
+    <div className="arcane-border p-5 flex flex-col">
       <Icon className="h-5 w-5 text-gold" />
       <div className="mt-2 font-display font-bold">{name}</div>
       <div className="font-data text-xs text-wizard">{price}</div>
-      <p className="mt-2 text-xs text-muted-foreground">{desc}</p>
+      <p className="mt-2 text-xs text-muted-foreground flex-1">{desc}</p>
+      <Button onClick={() => onBuy(priceId)} variant="outline" size="sm" className="mt-3 w-full">Add</Button>
     </div>
   );
 }
