@@ -98,21 +98,25 @@ export function Recommendation({ game }: { game: GameApi }) {
     }, 10);
   };
 
+  // Empty-table guard — if there's nobody to play against or no cards, do not
+  // compute or broadcast a verdict. Stops "ALL IN to an empty table" leaks.
+  const playable = ready && activeOpponents.length >= 1;
+
   // Auto-recompute whenever the table state changes and we have enough cards.
-  // The verdict populates on its own — the user should never have to click for it.
   useEffect(() => {
-    if (ready && !busy) run();
+    if (playable && !busy) run();
+    else if (!playable && result) setResult(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [streetKey, pot, toCall, heroToAct, activeOpponents.length]);
+  }, [streetKey, pot, toCall, heroToAct, activeOpponents.length, playable]);
 
   const decision = result?.decision ?? null;
   const stale = !!(result && result.key !== streetKey);
   const frozen = !!(result && !heroToAct && !stale);
-  const showVerdict = !!decision && !stale;
+  const showVerdict = !!decision && !stale && playable;
 
-  // Broadcast to Paladin Pocket (mobile mirror) whenever a fresh verdict is ready.
+  // Broadcast to Paladin Pocket only when we have a real verdict on a live hand.
   useEffect(() => {
-    if (!user || !decision || stale) return;
+    if (!user || !decision || stale || !playable) return;
     const street = !variant.community ? "—" : board.length === 0 ? "preflop" : board.length <= 3 ? "flop" : board.length === 4 ? "turn" : "river";
     publishVerdict(user.id, {
       verdict: decision.verdict,
@@ -128,24 +132,24 @@ export function Recommendation({ game }: { game: GameApi }) {
       heroToAct,
       ts: Date.now(),
     });
-  }, [user, decision, stale, streetKey, pot, toCall, heroToAct, variant.community, board, hero]);
+  }, [user, decision, stale, playable, streetKey, pot, toCall, heroToAct, variant.community, board, hero]);
 
   return (
 
 
 
-    <div className="rounded-xl border border-border bg-card p-4">
-      {/* WHAT TO DO — big red call-out, front and center */}
+    <div className="rounded-xl border border-border bg-card p-5">
+      {/* WHAT TO DO — big call-out, left-aligned */}
       <div
         className={cn(
-          "mt-3 rounded-xl border-2 p-3 text-center transition",
+          "mt-1 rounded-xl border-2 p-4 text-left transition",
           showVerdict
             ? "border-[oklch(0.58_0.24_27)] bg-[oklch(0.2_0.08_27)]"
             : "border-border bg-secondary/20",
           frozen && "opacity-70"
         )}
       >
-        <div className="font-data text-[10px] font-bold uppercase tracking-[0.3em] text-[oklch(0.7_0.2_27)]">
+        <div className="font-data text-xs font-bold uppercase tracking-[0.3em] text-[oklch(0.7_0.2_27)]">
           {frozen ? (
             <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" /> Locked · waiting for your turn</span>
           ) : (
@@ -153,20 +157,21 @@ export function Recommendation({ game }: { game: GameApi }) {
           )}
         </div>
         {showVerdict && decision ? (
-          <div className="font-display text-3xl font-black uppercase leading-tight text-[oklch(0.68_0.24_27)] drop-shadow-[0_0_12px_oklch(0.58_0.24_27/0.5)]">
+          <div className="font-display text-5xl font-black uppercase leading-tight text-[oklch(0.68_0.24_27)] drop-shadow-[0_0_12px_oklch(0.58_0.24_27/0.5)]">
             {whatToDo(decision, pot)}
           </div>
         ) : (
-          <div className="font-display text-lg font-bold text-muted-foreground">
-            {ready ? "Reading…" : "Waiting for cards"}
+          <div className="font-display text-2xl font-bold text-muted-foreground">
+            {!ready ? "Waiting for cards" : !playable ? "Waiting for a live hand…" : "Reading…"}
           </div>
         )}
       </div>
 
-      <Button onClick={run} disabled={!ready || busy} variant="secondary" className="mt-3 w-full gap-2 font-bold">
-        <Calculator className="h-4 w-4" />
+      <Button onClick={run} disabled={!playable || busy} variant="secondary" className="mt-3 w-full gap-2 font-bold text-base">
+        <Calculator className="h-5 w-5" />
         {busy ? "Crunching…" : "Recalculate"}
       </Button>
+
 
 
       {showVerdict && decision && (

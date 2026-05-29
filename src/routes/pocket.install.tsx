@@ -17,7 +17,9 @@ export const Route = createFileRoute("/pocket/install")({
 
 function Install() {
   const [os, setOs] = useState<"ios" | "android">("ios");
-  const url = typeof window !== "undefined" ? `${window.location.origin}/pocket` : "";
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const pocketUrl = `${origin}/pocket`;
+  const loginUrl = `${origin}/login?redirect=/pocket`;
   return (
     <main className="matrix-bg min-h-dvh px-4 py-10">
       <div className="relative z-10 mx-auto max-w-2xl">
@@ -31,10 +33,18 @@ function Install() {
           Pocket is a Progressive Web App — it installs directly from your browser. No App Store, no Play Store, no wait.
         </p>
 
-        <div className="mt-6 flex justify-center">
-          {url ? <PocketQR url={url} size={200} /> : null}
+        <div className="mt-6 grid gap-6 sm:grid-cols-2">
+          <div className="flex flex-col items-center rounded-xl border border-border bg-card p-4">
+            <div className="font-data text-[10px] uppercase tracking-[0.3em] text-gold">If you're already signed in</div>
+            {origin ? <div className="mt-2"><PocketQR url={pocketUrl} size={170} /></div> : null}
+            <p className="mt-2 text-center font-data text-[10px] text-muted-foreground break-all">{pocketUrl}</p>
+          </div>
+          <div className="flex flex-col items-center rounded-xl border border-border bg-card p-4">
+            <div className="font-data text-[10px] uppercase tracking-[0.3em] text-wizard">First time on this phone</div>
+            {origin ? <div className="mt-2"><PocketQR url={loginUrl} size={170} /></div> : null}
+            <p className="mt-2 text-center font-data text-[10px] text-muted-foreground break-all">Sign in, then Pocket opens</p>
+          </div>
         </div>
-        <p className="mt-2 text-center font-data text-xs text-muted-foreground break-all">{url}</p>
 
         <div className="mt-8 flex gap-2 rounded-xl border border-border bg-card p-1">
           <TabBtn active={os === "ios"} onClick={() => setOs("ios")}><Apple className="h-4 w-4" /> iPhone / iPad</TabBtn>

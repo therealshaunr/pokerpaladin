@@ -18,7 +18,7 @@ export function TierComparison() {
         <h2 className="font-display text-xl md:text-2xl font-black uppercase tracking-wide">GO LIVE vs SCAN NOW</h2>
       </div>
 
-      <p className="mx-auto mb-6 max-w-2xl text-sm md:text-base leading-relaxed text-muted-foreground">
+      <p className="mx-auto mb-6 max-w-2xl text-base md:text-lg leading-relaxed text-muted-foreground text-center">
         <span className="text-wizard font-semibold">GO LIVE</span> is about as close to real-time table-rendering as humanly possible — while still leaving you the breath to read, react, and make an informed decision. It's training wheels for the cleric in you: every hand sharpens your instincts until you start <span className="text-gold font-semibold">channeling the Paladin yourself</span>.
       </p>
 
