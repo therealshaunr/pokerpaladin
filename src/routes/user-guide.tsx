@@ -54,6 +54,7 @@ function UserGuide() {
 
         {/* DURING */}
         <Section icon={Eye} title="B · During the hand">
+          <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-border bg-card/40 p-4">
               <div className="font-display font-bold">Standard tier · SCAN NOW</div>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -70,9 +71,8 @@ function UserGuide() {
           <p className="mt-4 text-sm text-muted-foreground">
             The <span className="text-gold font-semibold">PALADIN SAYS</span> panel shows one of: FOLD · CHECK · CALL · BET (size) · RAISE (size) · ALL IN. It refreshes automatically after every scan and locks the last verdict between actions so you never read a stale call.
           </p>
-
-          </p>
         </Section>
+
 
         {/* TROUBLESHOOTING */}
         <Section icon={AlertTriangle} title="C · Troubleshooting">
