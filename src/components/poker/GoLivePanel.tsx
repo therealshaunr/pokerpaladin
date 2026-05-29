@@ -5,7 +5,7 @@ import { analyzeTable, type VisionResult } from "@/lib/poker/vision.functions";
 import { parseCard, cardKey, type Card } from "@/lib/poker/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { MonitorUp, Pause, Play, Radio, X, Zap, Moon } from "lucide-react";
+import { Pause, Play, Radio, Zap, Moon } from "lucide-react";
 
 const GO_LIVE_POLL_MS = 2500; // pro: real-time-ish
 const IDLE_THRESHOLD = 3; // consecutive empty reads -> standby
