@@ -17,28 +17,49 @@ export type Database = {
       addons: {
         Row: {
           created_at: string
+          current_period_end: string | null
+          environment: string
+          expires_at: string | null
           id: string
           kind: Database["public"]["Enums"]["addon_kind"]
+          license_key: string | null
+          price_id: string | null
+          product_id: string | null
           status: Database["public"]["Enums"]["sub_status"]
           stripe_sub_id: string | null
+          stripe_subscription_id: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           created_at?: string
+          current_period_end?: string | null
+          environment?: string
+          expires_at?: string | null
           id?: string
           kind: Database["public"]["Enums"]["addon_kind"]
+          license_key?: string | null
+          price_id?: string | null
+          product_id?: string | null
           status?: Database["public"]["Enums"]["sub_status"]
           stripe_sub_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           created_at?: string
+          current_period_end?: string | null
+          environment?: string
+          expires_at?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["addon_kind"]
+          license_key?: string | null
+          price_id?: string | null
+          product_id?: string | null
           status?: Database["public"]["Enums"]["sub_status"]
           stripe_sub_id?: string | null
+          stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -108,6 +129,69 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_keys: {
+        Row: {
+          addon_id: string | null
+          id: string
+          issued_at: string
+          key: string
+          notes: string | null
+          price_id: string
+          product_id: string | null
+          revoked_at: string | null
+          sku: string
+          status: string
+          subscription_id: string | null
+          tier_code: string
+          user_id: string
+        }
+        Insert: {
+          addon_id?: string | null
+          id?: string
+          issued_at?: string
+          key: string
+          notes?: string | null
+          price_id: string
+          product_id?: string | null
+          revoked_at?: string | null
+          sku: string
+          status?: string
+          subscription_id?: string | null
+          tier_code: string
+          user_id: string
+        }
+        Update: {
+          addon_id?: string | null
+          id?: string
+          issued_at?: string
+          key?: string
+          notes?: string | null
+          price_id?: string
+          product_id?: string | null
+          revoked_at?: string | null
+          sku?: string
+          status?: string
+          subscription_id?: string | null
+          tier_code?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_keys_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_keys_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
             referencedColumns: ["id"]
           },
         ]
@@ -260,14 +344,23 @@ export type Database = {
       subscriptions: {
         Row: {
           activation_id: string
+          cancel_at_period_end: boolean
           created_at: string
           current_period_end: string | null
+          current_period_start: string | null
+          environment: string
           frozen: boolean
+          go_live_seconds_included: number
+          go_live_seconds_used: number
           id: string
           interval: Database["public"]["Enums"]["sub_interval"]
+          license_key: string | null
+          price_id: string | null
+          product_id: string | null
           status: Database["public"]["Enums"]["sub_status"]
           stripe_customer_id: string | null
           stripe_sub_id: string | null
+          stripe_subscription_id: string | null
           suspended: boolean
           tier: Database["public"]["Enums"]["sub_tier"]
           updated_at: string
@@ -275,14 +368,23 @@ export type Database = {
         }
         Insert: {
           activation_id?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
           frozen?: boolean
+          go_live_seconds_included?: number
+          go_live_seconds_used?: number
           id?: string
           interval?: Database["public"]["Enums"]["sub_interval"]
+          license_key?: string | null
+          price_id?: string | null
+          product_id?: string | null
           status?: Database["public"]["Enums"]["sub_status"]
           stripe_customer_id?: string | null
           stripe_sub_id?: string | null
+          stripe_subscription_id?: string | null
           suspended?: boolean
           tier?: Database["public"]["Enums"]["sub_tier"]
           updated_at?: string
@@ -290,20 +392,100 @@ export type Database = {
         }
         Update: {
           activation_id?: string
+          cancel_at_period_end?: boolean
           created_at?: string
           current_period_end?: string | null
+          current_period_start?: string | null
+          environment?: string
           frozen?: boolean
+          go_live_seconds_included?: number
+          go_live_seconds_used?: number
           id?: string
           interval?: Database["public"]["Enums"]["sub_interval"]
+          license_key?: string | null
+          price_id?: string | null
+          product_id?: string | null
           status?: Database["public"]["Enums"]["sub_status"]
           stripe_customer_id?: string | null
           stripe_sub_id?: string | null
+          stripe_subscription_id?: string | null
           suspended?: boolean
           tier?: Database["public"]["Enums"]["sub_tier"]
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          last_reply_by: string | null
+          priority: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          last_reply_by?: string | null
+          priority?: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          last_reply_by?: string | null
+          priority?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ticket_messages: {
+        Row: {
+          author_id: string
+          author_role: string
+          body: string
+          created_at: string
+          id: string
+          ticket_id: string
+        }
+        Insert: {
+          author_id: string
+          author_role?: string
+          body: string
+          created_at?: string
+          id?: string
+          ticket_id: string
+        }
+        Update: {
+          author_id?: string
+          author_role?: string
+          body?: string
+          created_at?: string
+          id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -331,6 +513,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_license_key: {
+        Args: { _sku: string; _tier: string }
+        Returns: string
+      }
+      get_go_live_usage: {
+        Args: { _user_id: string }
+        Returns: {
+          hours_used: number
+          period_start: string
+          seconds_used: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
