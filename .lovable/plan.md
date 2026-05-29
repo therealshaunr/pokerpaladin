@@ -1,153 +1,144 @@
 
-# Poker Paladin — SaaS Conversion Plan
+# Poker Paladin — Phase 2 Plan
 
-Turn the current single-page Poker Co-Pilot into a multi-tenant subscription product with marketing site, auth, billing, entitlements, admin, and a scalable live-analysis pipeline.
+Builds on the auth/portal foundation already in place. Adds billing, license-key activation, usage metering, support tickets, legal pages, and a full visual overhaul.
 
-## 1. Scaling answer (the "100k users at once" question)
+## 1. Pricing & packaging (final)
 
-The current vision flow sends a screenshot to a server function which calls an LLM. That scales well **only if we keep heavy work on the user's device and per-user**:
+| Plan | Price/mo | Scans/day | Go-Live hours/mo | Voice | Hand export |
+|---|---|---|---|---|---|
+| **Standard** | $79.99 | 250 manual scans | — | no | no |
+| **Pro** | $149.99 | unlimited | **60 hrs** included | yes | yes |
 
-- **Capture stays in the browser** (already does via `getDisplayMedia`). No video ever hits our servers.
-- **Each user's analysis is independent** — there's no shared room, no central game state. So "100k concurrent" is really "100k independent serverless invocations per ~5s," not a realtime fan-out problem.
-- **Per-user rate limiting + queueing** on the server fn (e.g., 1 in-flight scan per user, 5s min interval) to cap cost and prevent abuse.
-- **Vision provider** = Lovable AI Gateway (already wired). Gateway handles the burst; we bill it back via entitlements (scan credits per tier).
-- **Pro "Go Live"** uses the same per-user 5s loop, just auto-triggered. No websockets needed for the core loop.
-- **Mobile rendering add-on** (phone shows results while laptop captures) — this IS the only piece that needs a realtime channel. Use Lovable Cloud Realtime (Supabase Realtime) with a per-user channel keyed by `user_id` + short-lived `session_id`. One channel per active session, not per user globally. Scales to hundreds of thousands of channels.
-- **Browser-extension add-on** captures locally and POSTs frames to the same server fn — same scaling story.
+**Add-ons (recurring monthly unless noted):**
+- Voice Companion — $10/mo (Pro only) *(already baked into Pro per your $89 example → keeping it as a Pro-only toggle, $0 if you'd rather bundle. **Confirm**)*
+- Chrome Extension — $10/mo
+- Mobile Renderer — $8/mo
+- **Go-Live Hour Pack** — $14.99 one-time, +10 hours (rolls over 90 days)
 
-So: no sharding, no rooms, no central state. Scale = serverless fns + per-user channels + entitlement-gated quotas.
+Crypto = "Coming Soon" badge on checkout (Changelly placeholder).
 
-## 2. Tech stack (keep what works)
+**Trial:** No license-gated trial. A public `/demo` page lets anyone try a frozen sample hand + analyzer mock (no real screen capture). Encourages signup.
+**Refund:** 7-day money-back, account auto-disabled on refund. Posted on `/refund-policy`.
 
-- TanStack Start + React 19 (current).
-- **Lovable Cloud** (Supabase) for auth, Postgres, Realtime, Storage.
-- **Lovable Payments** (Stripe seamless) for subscriptions + add-ons (recurring) — best fit for SaaS.
-- Lovable AI Gateway for vision + strategy fallback.
-- Server functions (`createServerFn`) for all app logic; `/api/public/*` only for Stripe webhooks.
+## 2. License-key activation flow
 
-## 3. Database schema (Lovable Cloud)
-
+```text
+Stripe / PayPal webhook
+        │
+        ▼
+billing.functions: handlePaymentSuccess
+  • create/find subscription row
+  • generate 25-char key (groups of 5, e.g. PLDN7-X4K2M-…)
+  • store in license_keys (user_id, plan, addons[], status='unused')
+  • enqueue confirmation email with key
+        │
+        ▼
+User opens /portal → "Activate License" card
+  • pastes key
+  • server validates → flips subscriptions.activated=true
+  • entitlements_view now returns plan + addons
+        │
+        ▼
+/app gates on getEntitlements().activated === true
 ```
-profiles(id=auth.users.id, name, phone, display_name, shipping_*, created_at)
-user_roles(user_id, role)                  -- 'admin' | 'user'  (separate table; security-definer has_role)
-subscriptions(id, user_id, tier, interval, status, current_period_end,
-              stripe_customer_id, stripe_sub_id, activation_id, suspended, frozen)
-addons(id, user_id, kind, status, stripe_sub_id)   -- kind: 'extension' | 'mobile_render'
-entitlements_view                          -- derived: tier + active add-ons
-sessions(id, user_id, variant, started_at, ended_at)
-hands(id, session_id, hero_cards, board, pot, decision, ts)
-scan_events(id, user_id, session_id, ts, ms, tokens_in, tokens_out)   -- usage + quota
-mobile_links(id, user_id, session_id, pair_code, expires_at)          -- phone pairing
-audit_log(id, actor_id, target_user_id, action, meta, ts)             -- admin actions
-```
-RLS: user-owned rows scoped to `auth.uid()`. Admin reads via `has_role(auth.uid(),'admin')`. GRANTs on every public table.
 
-## 4. Frontend page map
+**Admin override:** `/admin/users/:id` has plan + addon toggles that bypass the key requirement (for refunds, comps, support). All writes log to `audit_log`.
 
-```
+## 3. Usage metering
+
+Every scan + every minute of Go-Live writes to `usage_events(user_id, kind, qty, ts)`. A SQL view `usage_current_period` aggregates per billing cycle.
+
+**Shown to user** in `/portal` sidebar:
+- Scans today: 42 / 250
+- Go-Live this month: 14.3 / 60.0 hrs
+- Next reset: Jun 28
+
+**Shown to admin** in `/admin/users/:id`: same plus all-time totals, cost is hidden.
+
+Soft enforcement: when Go-Live hits 100%, banner appears with "Buy 10-hour pack" CTA; scanning continues for 5 grace minutes then pauses until purchase.
+
+## 4. Support tickets (no email)
+
+New tables: `support_tickets`, `ticket_messages`.
+
+- `/portal/support` — list + "New Ticket" (category: billing / bug / question / feature)
+- `/portal/support/:id` — threaded view, user + admin can reply
+- `/admin/tickets` — queue with filters, assign, status (open/pending/closed)
+- Realtime via Supabase Realtime channel `ticket:{id}` so replies appear without refresh
+- Only system email = password reset, payment confirmation + license key, refund confirmation. Everything else stays in-app.
+
+## 5. Pages to build/update
+
+```text
 Public
-  /                        marketing landing
-  /pricing                 tiers + add-ons + interval toggle
-  /docs/*                  configuring levels, antes, timer, connect screen, analyzer, add-ons
-  /login  /signup  /reset-password  /verify-email
+  /                      marketing landing (NEW theme + paladin hero)
+  /pricing               2 tiers + addons + go-live packs + crypto badge
+  /faq                   what it is, what it isn't, legal stance
+  /disclaimer            novelty/training tool, no scraping/injection, user accepts ToS
+  /refund-policy         7-day rule
+  /demo                  frozen sample hand (no signup needed)
+  /docs/*                user guides
+  /login /signup /reset-password
 
 _authenticated
-  /portal                  name, plan, billing, shipping, add-ons, downloads, "Launch Paladin"
-  /portal/billing          change plan/interval, add/remove add-ons, invoices
-  /portal/account          profile, password, shipping
-  /portal/downloads        extension installer, connector, mobile pairing
-  /app                     the analyzer (current Index, gated by entitlement)
-  /app/session/:id         live session view
-  /mobile/:pairCode        phone-side renderer (mobile add-on only)
+  /portal                plan, usage meters, activate license, support, downloads
+  /portal/billing        manage sub, buy hour packs, change plan, invoices
+  /portal/activate       paste 25-char key
+  /portal/support        tickets list + thread view
+  /app                   analyzer (gated by entitlements.activated)
 
-_authenticated/_admin      (has_role='admin')
-  /admin/users
-  /admin/users/:id         edit, reset pw, suspend/freeze, activation id
-  /admin/billing           failed payments, manual re-enable
+_authenticated/_admin
+  /admin/users           list, filter, search
+  /admin/users/:id       toggles for plan + addons, usage, reset license, suspend/freeze
+  /admin/tickets         queue
+  /admin/billing         failed payments, manual activations
   /admin/audit
 ```
 
-## 5. Backend / server-fn structure
+## 6. Database changes (new tables)
 
+```text
+license_keys(id, user_id, key_hash, plan, addons[], status, generated_at, activated_at, revoked_at)
+usage_events(id, user_id, kind, qty, session_id, ts)         -- kind: scan|golive_min
+hour_packs(id, user_id, hours, hours_remaining, expires_at, purchased_at)
+support_tickets(id, user_id, category, subject, status, assigned_admin, created_at, updated_at)
+ticket_messages(id, ticket_id, author_id, body, created_at)
+payments(id, user_id, provider, amount_cents, currency, kind, stripe_event_id, paypal_id, status, ts)
 ```
-auth.functions.ts          signup w/ email verify, profile bootstrap
-billing.functions.ts       create checkout session, customer portal, change plan, add/remove addon
-entitlements.functions.ts  getEntitlements() -> { tier, addons[], scanQuotaRemaining }
-vision.functions.ts        analyzeTable (existing) + quota check + scan_events log
-strategy.functions.ts      server-side decision (Pro = richer model)
-session.functions.ts       start/end session, log hands, export (Pro)
-mobile.functions.ts        createPairCode, claimPairCode, publishFrame
-admin.functions.ts         list/edit users, reset pw, suspend, freeze, audit
-api/public/stripe-webhook  signed webhook -> updates subscriptions/addons + activation_id
-```
+All with RLS scoped to `auth.uid()` + admin override via `has_role`. Key stored hashed; only emailed in plaintext once.
 
-## 6. Entitlement & access control
+## 7. Visual overhaul — "Obsidian & Arcane Purple"
 
-- Single `getEntitlements()` server fn = source of truth, cached per-request.
-- Every gated server fn (`analyzeTable`, `exportHand`, `publishFrame`, `voiceGuidance`) calls a `requireEntitlement('pro' | 'extension' | 'mobile_render')` helper that throws 402 on miss.
-- UI hides Pro/add-on features when missing and shows upsell.
-- Stripe webhook is the only writer to `subscriptions`/`addons`. Failed payment -> `status='past_due'` -> entitlement check fails -> `/app` shows "Payment failed, update card." Admin can override (`suspended`/`frozen` flags) and reset `activation_id`.
+- Update `src/styles.css` tokens: background `#0a0612`, surface `#1a0f2e`, primary `#6b21a8` (arcane purple), accent `#d4a84c` (rune gold). Drop the bright matrix green to a *muted* secondary used only for "go" states.
+- Typography: keep Orbitron headings + JetBrains Mono data, add `Cinzel` for landing headlines (rune-y serif).
+- New hero illustration (generated): hooded paladin holding a staff wrapped in shredded playing-card shreds, purple smoke, gold sigils. Used on `/`, `/pricing`, and as portal avatar.
+- Card / button surfaces get subtle purple→gold gradient borders, sigil watermarks on hero sections.
+- Re-skin analyzer chrome to match (panels, badges, "WHAT TO DO" still high-contrast but in gold-on-deep-purple).
 
-## 7. Live-analysis engine changes
+## 8. Payments wiring
 
-Keep current capture + 5s poll. Additions:
+- **Stripe seamless** for cards + Apple/Google Pay (recurring subs + one-time hour packs).
+- **PayPal** via PayPal JS SDK button on checkout (subs + one-time).
+- **Crypto** = disabled "Coming Soon" tile linking to FAQ entry.
+- One webhook route per provider under `/api/public/` with signature verification → both feed the same `handlePaymentSuccess` server fn → license-key generation.
 
-- **Quota gate** before each scan; Standard = N scans/day, Pro = unlimited (soft cap).
-- **Pro "Go Live"** = same loop but auto + voice output via Web Speech API (no server cost).
-- **Hand reset**: detect board clear / new hole cards -> wipe hero+board, start new `hands` row.
-- **Mobile renderer**: when mobile add-on active, after each scan publish the *result JSON* (not the frame) to Realtime channel `mobile:{user_id}:{session_id}`. Phone subscribes via pair code. Tiny payload, no video.
-- **Strategy fix carryover**: keep the premium-preflop floor + pot-fraction sizing already added.
+## 9. Phased build order
 
-## 8. Marketing site
+1. **Theme + landing/marketing pages** (visual overhaul + paladin hero + FAQ + disclaimer + refund + demo) — shippable first, validates direction.
+2. **DB schema** (license_keys, usage_events, hour_packs, tickets, payments).
+3. **Stripe seamless enable** + products + checkout + webhook + license-key generation + confirmation email.
+4. **Portal: activate license, usage meters, billing screen**.
+5. **Entitlement gates** on `/app` (analyzer + Go-Live + voice) + usage metering writes.
+6. **Support tickets** (user + admin sides, realtime).
+7. **Admin portal** (user CRUD, plan/addon toggles, ticket queue, audit log).
+8. **PayPal** added to checkout.
+9. **Crypto placeholder + Changelly affiliate link**.
 
-New `/`, `/pricing`, `/docs/*` routes. Existing analyzer moves to `/app`. Landing: hero, feature grid, tier compare, add-on cards, FAQ, CTA. AI mascot illustration (hooded guy w/ shades + cards) generated once and used across site + portal chatbot avatar.
+## 10. Open items to confirm before I start
 
-## 9. Admin portal
-
-- `_authenticated/_admin` layout uses `has_role` gate.
-- Tables of users with filters (tier, status, failed payment).
-- Per-user drawer: details, activation id (regenerate), entitlements, suspend/freeze toggles, "send password reset," audit trail.
-- All writes go through `admin.functions.ts` and append to `audit_log`.
-
-## 10. Add-ons
-
-- **Extension** ($10/mo recurring): MV3 Chrome extension packaged from `/extension/` and served as `/downloads/paladin-extension.zip`. Extension calls the same server fns with the user's auth token (OAuth-style device link via pair code).
-- **Mobile rendering** ($ TBD recurring): pair phone via 6-digit code; phone subscribes to Realtime channel and renders the recommendation UI. No capture on phone.
-
-## 11. Accessibility
-
-- Tokens already in `styles.css`; audit contrast on red "WHAT TO DO" + matrix accents.
-- Voice add-on for Pro: Web Speech API, toggle per session, only speaks on action change.
-- Responsive breakpoints for phone/tablet/desktop/TV; `h-dvh` not `h-screen`.
-
-## 12. Documentation
-
-Markdown route group `/docs/*` with: Levels, Antes, Timer, Connect Screen, Interpreting Analyzer, Add-ons, Account Setup. Sourced from `src/content/docs/*.md`.
-
-## 13. Phased roadmap
-
-1. **Foundation** — enable Lovable Cloud, auth (email + Google), profiles, user_roles, RLS, marketing skeleton.
-2. **Billing** — Stripe seamless, products for 2 tiers × 3 intervals + 2 add-ons, webhook -> subscriptions/addons, entitlements fn.
-3. **Portal + gating** — `/portal`, move analyzer to `/app`, wire `requireEntitlement`.
-4. **Pro features** — voice, session recording, hand export, Go Live auto-loop.
-5. **Admin portal** — users CRUD, suspend/freeze, audit.
-6. **Mobile add-on** — pair code + Realtime channel + `/mobile/:code` view.
-7. **Extension add-on** — MV3 build + device-link auth.
-8. **Docs + landing polish + accessibility pass**.
-
-## 14. Risks / open questions
-
-- **Vision cost at scale** — need Standard daily cap; confirm with you.
-- **Stripe vs Paddle** — Stripe seamless recommended (SaaS, global, subs). Confirm.
-- **Hand-history accuracy** — current LLM read isn't deterministic; consider lightweight OCR/template-match for chip stacks later.
-- **Legal** — screen-scraping real-money poker sites may violate their TOS; ship as "training/analysis tool" with a disclaimer, or restrict to home games / play money. Need your call.
-- **Mobile add-on transport** — Realtime over internet is simplest; true LAN/Bluetooth is a v2.
-- **Voice in noisy poker rooms** — earbud-only recommendation in UI.
-
-## Open questions for you before build
-
-1. Stripe seamless OK, or do you want Paddle?
-2. Standard scan cap — daily number? (suggest 200/day)
-3. Mobile add-on price?
-4. Real-money sites in scope, or home-games / play-money only?
-5. Should the existing `paladinpoker` code gate stay, or be replaced entirely by login?
+1. Voice Companion — bundled in Pro for free, or +$10/mo addon? (Your $89 example suggested addon; my plan put $149.99 Pro with voice included. Pick one.)
+2. Go-Live hours included with Pro: **60/mo** OK? (≈14 hrs/week)
+3. Hour pack price: **$14.99 / 10 hrs** OK?
+4. Standard daily scan cap: **250** OK?
+5. Should the demo page require email capture (lead-gen) or be fully anonymous?
