@@ -36,11 +36,6 @@ function Pricing() {
     }
   }, [user, buyParam, navigate]);
 
-function Pricing() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [activePrice, setActivePrice] = useState<string | null>(null);
-
   const buy = (priceId: string) => {
     if (!user) {
       navigate({ to: "/login", search: { redirect: `/pricing?buy=${priceId}` } });
