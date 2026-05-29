@@ -67,10 +67,10 @@ export const adminToggleLicense = createServerFn({ method: "POST" })
     if (data.action === "unfreeze") patch.frozen = false;
     const { error } = await supabaseAdmin
       .from("subscriptions")
-      .update(patch)
+      .update(patch as never)
       .eq("id", data.subscription_id);
     if (error) throw new Error(error.message);
-    await supabaseAdmin.from("audit_log").insert({
+
       actor_id: context.userId,
       action: `subscription.${data.action}`,
       meta: { subscription_id: data.subscription_id },
