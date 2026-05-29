@@ -180,6 +180,7 @@ export function SiteNav() {
         <div className="hidden items-center gap-1 md:flex">
           <Link to="/pricing"><Button variant="ghost" size="sm">Pricing</Button></Link>
           <Link to="/demo"><Button variant="ghost" size="sm">Demo</Button></Link>
+          <Link to="/shop"><Button variant="ghost" size="sm">Shop</Button></Link>
           <Link to="/how-to-play"><Button variant="ghost" size="sm">How to play</Button></Link>
           <Link to="/user-guide"><Button variant="ghost" size="sm">Manual</Button></Link>
           <Link to="/faq"><Button variant="ghost" size="sm">FAQ</Button></Link>
@@ -198,6 +199,7 @@ export function SiteFooter() {
     <footer className="mt-10 border-t border-border py-8 text-center text-xs text-muted-foreground">
       <div className="flex flex-wrap justify-center gap-4">
         <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
+        <Link to="/shop" className="hover:text-foreground">Shop</Link>
         <Link to="/how-to-play" className="hover:text-foreground">How to play</Link>
         <Link to="/user-guide" className="hover:text-foreground">User manual</Link>
         <Link to="/faq" className="hover:text-foreground">FAQ</Link>

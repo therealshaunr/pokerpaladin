@@ -57,33 +57,33 @@ function AppPage() {
   if (!started) return <GameSetup onStart={start} />;
 
   return (
-    <div className="matrix-bg min-h-dvh px-3 py-4">
-      <div className="relative z-10 mx-auto max-w-7xl space-y-4">
+    <div className="matrix-bg min-h-dvh px-4 py-6 text-[15px] md:text-[17px] leading-relaxed">
+      <div className="relative z-10 mx-auto max-w-7xl space-y-6">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="font-display text-xl font-black leading-none">
+            <h1 className="font-display text-2xl md:text-3xl font-black leading-none">
               POKER<span className="text-matrix"> CO-PILOT</span>
             </h1>
-            <p className="font-data text-xs text-muted-foreground">{variant.label} · {street} · {tier === "pro" ? "Pro" : "Standard"}</p>
+            <p className="font-data text-sm text-muted-foreground">{variant.label} · {street} · {tier === "pro" ? "Pro" : "Standard"}</p>
           </div>
-          <Link to="/portal" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-3 w-3" /> Portal
+          <Link to="/portal" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-4 w-4" /> Portal
           </Link>
         </header>
 
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* LEFT: table → scan → editor */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <PokerTable game={game} street={street} />
             <ScanPanel shared={shared} tier={tier} />
             <AllInOneEditor game={game} />
           </div>
 
           {/* RIGHT: GO LIVE → Paladin Says → cards */}
-          <div className="space-y-4">
+          <div className="space-y-6">
             <GoLivePanel game={game} tier={tier} shared={shared} />
             <Recommendation game={game} />
-            <div className="space-y-4 rounded-xl border border-border bg-card p-4">
+            <div className="space-y-4 rounded-xl border border-border bg-card p-5">
               <CardPicker label="Your cards" cards={hero} max={variant.holeCount} disabledKeys={disabledKeys} onChange={setHero} />
               {variant.community && (
                 <CardPicker label="Board" cards={board} max={variant.boardSize} disabledKeys={disabledKeys} onChange={setBoard} accent="muted" />
