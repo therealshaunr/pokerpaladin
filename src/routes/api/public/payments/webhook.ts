@@ -3,14 +3,14 @@ import { createClient } from "@supabase/supabase-js";
 import { type StripeEnv, verifyWebhook } from "@/lib/stripe.server";
 import { GO_LIVE_INCLUDED_HOURS, PRICE_CATALOG } from "@/lib/stripe";
 
-let _supabase: ReturnType<typeof createClient> | null = null;
-let _supabase: ReturnType<typeof createClient<any>> | null = null;
-function getSupabase() {
+let _supabase: any = null;
+function getSupabase(): any {
   if (!_supabase) {
-    _supabase = createClient<any>(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+    _supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
   }
   return _supabase;
 }
+
 
 // Map a Stripe price lookup_key to the tier/sku used in license keys.
 function resolveCatalog(lookupKey: string | null | undefined) {
