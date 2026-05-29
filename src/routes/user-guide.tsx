@@ -54,22 +54,23 @@ function UserGuide() {
 
         {/* DURING */}
         <Section icon={Eye} title="B · During the hand">
-          <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-border bg-card/40 p-4">
               <div className="font-display font-bold">Standard tier · SCAN NOW</div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Paladin auto-scans every 8 seconds (free, doesn't burn hours) and you can tap <span className="text-matrix font-semibold">SCAN NOW</span> any time for an on-demand read. Hit <span className="text-gold font-semibold">PALADIN SAYS</span> when it's your turn and the verdict drops in 5–7 seconds.
+                Paladin auto-scans every 8 seconds (free, doesn't burn hours) and you can tap <span className="text-matrix font-semibold">SCAN NOW</span> any time for an on-demand read. The verdict in <span className="text-gold font-semibold">PALADIN SAYS</span> populates on its own the moment the scan lands — no extra button to press.
               </p>
             </div>
             <div className="rounded-lg border border-wizard/40 bg-wizard/5 p-4">
               <div className="font-display font-bold text-wizard">Pro tier · GO LIVE</div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Leave Go Live on. The paladin re-reads the table every 2.5 seconds and locks the verdict the instant action gets to you. Don't switch tabs — the capture pauses.
+                Leave Go Live on. The paladin re-reads the table every 2.5 seconds and the verdict auto-updates in PALADIN SAYS. Don't switch tabs — the capture pauses.
               </p>
             </div>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            The <span className="text-gold font-semibold">PALADIN SAYS</span> panel shows one of: FOLD · CHECK · CALL · BET (size) · RAISE (size) · ALL IN. The verdict only ever displays when it's actually your turn — between actions it shows "Waiting for your turn" so you're never reading a stale call.
+            The <span className="text-gold font-semibold">PALADIN SAYS</span> panel shows one of: FOLD · CHECK · CALL · BET (size) · RAISE (size) · ALL IN. It refreshes automatically after every scan and locks the last verdict between actions so you never read a stale call.
+          </p>
+
           </p>
         </Section>
 
