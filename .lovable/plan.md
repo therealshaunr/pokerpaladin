@@ -1,93 +1,88 @@
-# Poker Paladin — Pro Launch Feature Pack
 
-Big build. Shipping in priority order across two phases so each phase lands as a working, testable slice rather than a 20-file mega-commit.
+# Consolidate Stripe under your BlackGrid Cyber / BlitzbuyAI account
 
-## Scope decisions
+Goal: route all Poker Paladin payments (subscriptions, add-ons, top-ups, merch) to the same Stripe account that already serves BlackGrid Cyber and BlitzbuyAI, so you get one balance, one payout, one 1099.
 
-- Voice TTS and opponent tendencies already exist (`src/lib/audio.ts`, `PokerTable` profile reads). I will surface, harden, and gate them — not rebuild.
-- Mobile second-screen pairing already exists (`pocket.install.tsx`, `PocketQRCard.tsx`). I will polish the viewer copy + add an explicit "Mobile Second Screen" entry in the app header so users find it.
-- Quick equity already runs inside `Recommendation` (Monte Carlo). I will add a compact "Equity vs ranges" strip (vs random / vs top 20% / vs pair+) so it reads as a calculator, not buried inside the verdict.
-- All new heavy features are Pro-gated through the existing `tier` value already loaded in `_authenticated.app.tsx`.
+Good news: you're still in sandbox/test mode here, so **no customer data or live subscriptions exist** that need migrating. This is just a re-attach.
 
-## Phase 1 — Multi-Table + gating (ship first)
+---
 
-**New: `src/lib/poker/useMultiTable.tsx`**
-- Holds an array of up to 4 `GameApi` instances created via `useGame()` per table slot.
-- `activeTableId`, `tables: { id, label, game, live }`, `addTable`, `removeTable`, `setActive`.
-- Persists table labels in `localStorage`.
+## What you do (in Stripe / Lovable dashboard)
 
-**New: `src/components/poker/TableTabs.tsx`**
-- Thumbnail tab strip across the top of `_authenticated.app.tsx`. Each tab shows label, mini pot, green pulsing dot when `shared.isLive`, close button. "+ Add table" button disabled when count == 4 or user not Pro.
+These are user actions — I can't perform them from inside the codebase.
 
-**Edit: `src/routes/_authenticated.app.tsx`**
-- If `tier === 'pro'`: render `TableTabs` and switch `game` to `activeTable.game`. Each table preserves its own cards/board/pot/share session.
-- If Standard: render single-table flow as today, plus a locked "Multi-Table (Pro)" pill that opens upgrade dialog.
+1. **Disconnect the current Stripe sandbox**
+   Open the Payments dashboard in this project → three-dots menu (top right) → "Disconnect Stripe". This unlinks the current unclaimed sandbox.
 
-**New: `src/components/UpgradeToProDialog.tsx`**
-- Reusable. Shows price ($79.99/mo), bullet list (Multi-Table, Session Review, Advanced Tendencies, Voice Coach, Mobile Second Screen), CTA → `/pricing`.
+2. **Re-enable Stripe payments on this project**
+   From the Payments dashboard, enable Stripe again. Lovable creates a new claimable sandbox.
 
-## Phase 2 — Session Review + Smart Leak Finder (Pro)
+3. **Claim the new sandbox INTO your existing account**
+   When you hit the "Claim sandbox" step, **sign in to your existing BlackGrid Cyber / BlitzbuyAI Stripe account** instead of creating a new one. Stripe attaches this project's sandbox to that account.
 
-**Edit: `src/lib/poker/useGame.tsx`**
-- Add `handHistory: HandRecord[]` ring buffer in memory: `{ ts, street, hero, board, pot, toCall, decision, actionTaken? }`.
-- `recordHand(record)` called from `Recommendation` whenever a fresh verdict is computed for a live hand (dedup by `streetKey`).
-- `endSession()` returns the array and clears it.
+4. **Complete go-live**
+   Since your existing account is already verified for the other ventures, steps 2 & 3 of go-live (business verification, bank, etc.) will be mostly pre-filled or auto-pass. Step 4 (live key provisioning) is automated.
 
-**New: `src/lib/poker/leakFinder.ts`**
-- Pure analysis over `HandRecord[]`:
-  - Aggression Factor, VPIP-proxy, fold-to-3bet-proxy from recorded decisions.
-  - Detect leaks: over-folding (folded with ≥45% equity), missed value (checked/called with ≥65% equity and small pot), overbluffing rivers, calling stations preflop.
-  - Top 5 most expensive hands by `(equity * pot - evCall)` delta against Paladin's verdict.
+---
 
-**New: `src/components/poker/SessionReport.tsx`**
-- Modal/sheet triggered by new "End Session" button in app header (Pro only).
-- Sections: headline ("3 leaks, est. -$240 EV"), leak cards with examples, Top 5 hands list (board + hero + what Paladin said vs what was logged), simple SVG radar chart (5 axes: Aggression, Fold Frequency, Value Capture, Bluff Discipline, Preflop Tightness).
-- "Save report" stores JSON to `localStorage` keyed by session start; "Print/Share" prints clean view.
-- Educational disclaimer footer.
+## What I do in the codebase (after you've reconnected)
 
-## Phase 3 — Tendency callouts, Equity strip, Mobile polish, Voice surface
+The seamless Stripe integration auto-injects `STRIPE_SANDBOX_API_KEY` / `STRIPE_LIVE_API_KEY` / webhook secrets, so most code stays untouched. But two things need re-running because Stripe products/prices don't carry over between connections:
 
-**Edit: `src/components/poker/Recommendation.tsx`**
-- New compact "Equity vs ranges" row under verdict (Pro-only): three pills — vs random, vs top 20%, vs JJ+/AK. Reuses existing Monte Carlo with weighted ranges.
-- Tendency callout banner: when an opponent profile has ≥10 hands and a notable tag (LAG, station, overbet-happy), show one-liner ("Button villain is loose-aggressive — overbet 4x when checked to"). Pro only; Standard sees teaser.
+1. **Recreate the price catalog in the new account** via `payments--create_product` / `payments--create_price` for every entry in `src/lib/stripe.ts` `PRICE_CATALOG`:
+   - `std_monthly`, `std_yearly` (Standard plan)
+   - `pro_monthly`, `pro_yearly` (Pro plan)
+   - `voice_monthly`, `lens_monthly`, `mobile_monthly` (add-ons)
+   - `topup_10h_once` (one-time 10-hour pack)
 
-**Edit: `src/components/poker/ScanPanel.tsx`**
-- Promote voice toggle into a labeled "Voice Coach" switch with mini description "Paladin calls Fold/Call/Raise out loud" and disclaimer text.
+   The human-readable IDs (`pro_monthly`, etc.) stay identical, so **zero changes to checkout code, `useTier`, the webhook handler, or `payments.functions.ts`**. Tax codes (`txcd_10103001` SaaS / `txcd_30070003` apparel) get re-applied during recreation.
 
-**Edit: `src/routes/pocket.tsx`** (Mobile second-screen viewer)
-- Bigger verdict typography, equity %, "PALADIN SAYS" headline, educational disclaimer footer. No layout overhaul — just clarity and size.
+2. **Tag products with metadata** so you can filter Poker Paladin transactions out of your unified Stripe dashboard:
+   ```
+   metadata: { venture: "poker_paladin" }
+   ```
+   Set on each Product so the existing BlackGrid/Blitzbuy charges stay distinguishable in reports.
 
-**Edit: `src/routes/_authenticated.app.tsx` header**
-- Add "Mobile Second Screen" quick link → `/pocket/install`.
-- Add "End Session" button (Pro) → opens `SessionReport`.
+3. **Sanity-check the webhook** — `src/routes/api/public/payments/webhook.ts` uses `PAYMENTS_SANDBOX_WEBHOOK_SECRET` / `PAYMENTS_LIVE_WEBHOOK_SECRET` from env, which Lovable rotates automatically on reconnect. No code changes, but I'll verify the env vars repopulated by calling `secrets--fetch_secrets`.
 
-## Cross-cutting
+4. **Run a $0.50 test checkout** in sandbox to confirm the new connection works end-to-end (cart → Stripe Checkout → webhook fires → license issued).
 
-**Disclaimers**
-- Add `<EducationalDisclaimer />` component (small muted footer line) on app, pocket viewer, and session report: "Poker Paladin is an educational training tool. Use only where permitted by the operator/venue."
+---
 
-**Subscription gating helper**
-- New `src/lib/useTier.ts` — returns `{ tier, isPro, requirePro(featureName) }` reading from existing query in `_authenticated.app.tsx`. Lift the query into this hook so multiple components share it without refetching.
+## What does NOT need to change
 
-**No DB migrations.** Session reports stay client-side for v1.
+- App code: `stripe.ts`, `stripe.server.ts`, `payments.functions.ts`, `merch.functions.ts`, webhook route — all unchanged.
+- Database schema (`subscriptions`, `addons`, `license_keys`) — unchanged.
+- The Lovable AI Gateway connection (separate from Stripe).
+- Pricing displayed on `/pricing` — unchanged.
 
-## Technical notes
+---
 
-- No new npm deps. Radar chart is hand-rolled SVG (≤40 lines).
-- Voice already uses `speechSynthesis` — no provider change.
-- Multi-table memory cost: 4 × `useGame` ≈ trivial; Monte Carlo only runs for the active table.
-- Tendency tracker piggybacks on existing `profiles` map in `useGame`; I'll add `recordOpponentAction` already partially present and expose a `tendencyTag(profile)` helper.
+## Reporting separation (heads up)
 
-## Files
+With one Stripe account serving three ventures, your Stripe dashboard shows all transactions together. To keep Poker Paladin's books clean:
+- I'll add `metadata.venture = "poker_paladin"` to every Product (done in step 1 above).
+- In Stripe dashboard you can filter Payments / Subscriptions by that metadata.
+- If you want hard separation later (separate 1099s, separate dispute history), you'd switch to "separate accounts, same payout bank" instead. Easy to revisit; nothing here locks you in.
 
-**Create (8):** `useMultiTable.tsx`, `TableTabs.tsx`, `UpgradeToProDialog.tsx`, `leakFinder.ts`, `SessionReport.tsx`, `useTier.ts`, `EducationalDisclaimer.tsx`, `TendencyCallout.tsx`.
+---
 
-**Edit (6):** `_authenticated.app.tsx`, `useGame.tsx`, `Recommendation.tsx`, `ScanPanel.tsx`, `pocket.tsx`, `PaladinWordmark.tsx` (small "Pro" badge variant).
+## Order of operations
 
-## Out of scope for this build
+```text
+You: disconnect current Stripe in Payments dashboard
+  ↓
+You: re-enable Stripe, claim into BlackGrid/BlitzbuyAI account
+  ↓
+You: complete go-live (fast — account already verified)
+  ↓
+Me: recreate 8 products/prices with venture metadata + tax codes
+  ↓
+Me: verify webhook secrets repopulated
+  ↓
+Me: run sandbox test checkout, confirm webhook + license flow
+  ↓
+You: flip to live mode in Payments dashboard
+```
 
-- Persisting session reports to Supabase (client-side first; can promote to DB later).
-- Real-range solver for equity strip (using existing Monte Carlo with simple range weights).
-- Native mobile app — second-screen stays a web view.
-
-Approve and I'll ship Phase 1 → 2 → 3 in that order.
+Ready when you are — kick off step 1 in the Payments dashboard and tell me when you've claimed into the existing account. I'll handle the rest.
