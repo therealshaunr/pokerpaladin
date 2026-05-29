@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { amIAdmin } from "@/lib/admin.functions";
 import { SupportInbox } from "@/components/SupportInbox";
 import { Button } from "@/components/ui/button";
-import { Spade, LogOut, Play, Puzzle, Smartphone, Gift, Copy, Check, Users, Shield } from "lucide-react";
+import { Spade, LogOut, Play, Puzzle, Smartphone, Gift, Copy, Check, Users, Shield, ShoppingBag } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/portal")({
   component: Portal,
@@ -209,7 +209,15 @@ function Portal() {
           <Link to="/coming-soon" className="group rounded-2xl border border-border bg-card p-6 transition hover:border-gold hover:bg-card/80">
             <Smartphone className="h-6 w-6 text-gold" />
             <div className="mt-3 font-display text-lg font-bold">Mobile view <span className="ml-1 text-[10px] font-data uppercase tracking-wider text-gold">soon</span></div>
-            <p className="mt-1 text-xs text-muted-foreground">Mirror Paladin to your phone. Being enchanted in the holy forge.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Pair your phone to mirror Paladin's verdicts while you play.</p>
+          </Link>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-1">
+          <Link to="/shop" className="group rounded-2xl border border-gold/40 bg-gradient-to-br from-gold/10 to-transparent p-6 transition hover:border-gold hover:shadow-[0_0_40px_-15px_rgba(212,175,76,0.6)]">
+            <ShoppingBag className="h-6 w-6 text-gold" />
+            <div className="mt-3 font-display text-lg font-bold">Paladin Armory · Merch shop</div>
+            <p className="mt-1 text-xs text-muted-foreground">Tees, hoodies, shades, socks, bottles, stickers. Bundle 3+ for 10% off · free shipping over $100.</p>
           </Link>
         </section>
 

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UserGuideRouteImport } from './routes/user-guide'
+import { Route as ShopRouteImport } from './routes/shop'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as LoginRouteImport } from './routes/login'
@@ -20,6 +21,8 @@ import { Route as DemoRouteImport } from './routes/demo'
 import { Route as ComingSoonRouteImport } from './routes/coming-soon'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShopCartRouteImport } from './routes/shop.cart'
+import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated.portal'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
@@ -30,6 +33,11 @@ import { Route as ApiPublicHooksSweepRouteImport } from './routes/api/public/hoo
 const UserGuideRoute = UserGuideRouteImport.update({
   id: '/user-guide',
   path: '/user-guide',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RefundPolicyRoute = RefundPolicyRouteImport.update({
@@ -81,6 +89,16 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShopCartRoute = ShopCartRouteImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => ShopRoute,
+} as any)
+const ShopSlugRoute = ShopSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ShopRoute,
+} as any)
 const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
   id: '/checkout/return',
   path: '/checkout/return',
@@ -123,11 +141,14 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/shop': typeof ShopRouteWithChildren
   '/user-guide': typeof UserGuideRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
   '/checkout/return': typeof CheckoutReturnRoute
+  '/shop/$slug': typeof ShopSlugRoute
+  '/shop/cart': typeof ShopCartRoute
   '/api/public/hooks/sweep': typeof ApiPublicHooksSweepRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -141,11 +162,14 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/shop': typeof ShopRouteWithChildren
   '/user-guide': typeof UserGuideRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
   '/checkout/return': typeof CheckoutReturnRoute
+  '/shop/$slug': typeof ShopSlugRoute
+  '/shop/cart': typeof ShopCartRoute
   '/api/public/hooks/sweep': typeof ApiPublicHooksSweepRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -161,11 +185,14 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
+  '/shop': typeof ShopRouteWithChildren
   '/user-guide': typeof UserGuideRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/portal': typeof AuthenticatedPortalRoute
   '/checkout/return': typeof CheckoutReturnRoute
+  '/shop/$slug': typeof ShopSlugRoute
+  '/shop/cart': typeof ShopCartRoute
   '/api/public/hooks/sweep': typeof ApiPublicHooksSweepRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -181,11 +208,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/refund-policy'
+    | '/shop'
     | '/user-guide'
     | '/admin'
     | '/app'
     | '/portal'
     | '/checkout/return'
+    | '/shop/$slug'
+    | '/shop/cart'
     | '/api/public/hooks/sweep'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -199,11 +229,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/refund-policy'
+    | '/shop'
     | '/user-guide'
     | '/admin'
     | '/app'
     | '/portal'
     | '/checkout/return'
+    | '/shop/$slug'
+    | '/shop/cart'
     | '/api/public/hooks/sweep'
     | '/api/public/payments/webhook'
   id:
@@ -218,11 +251,14 @@ export interface FileRouteTypes {
     | '/login'
     | '/pricing'
     | '/refund-policy'
+    | '/shop'
     | '/user-guide'
     | '/_authenticated/admin'
     | '/_authenticated/app'
     | '/_authenticated/portal'
     | '/checkout/return'
+    | '/shop/$slug'
+    | '/shop/cart'
     | '/api/public/hooks/sweep'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
@@ -238,6 +274,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
+  ShopRoute: typeof ShopRouteWithChildren
   UserGuideRoute: typeof UserGuideRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
   ApiPublicHooksSweepRoute: typeof ApiPublicHooksSweepRoute
@@ -251,6 +288,13 @@ declare module '@tanstack/react-router' {
       path: '/user-guide'
       fullPath: '/user-guide'
       preLoaderRoute: typeof UserGuideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/refund-policy': {
@@ -323,6 +367,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shop/cart': {
+      id: '/shop/cart'
+      path: '/cart'
+      fullPath: '/shop/cart'
+      preLoaderRoute: typeof ShopCartRouteImport
+      parentRoute: typeof ShopRoute
+    }
+    '/shop/$slug': {
+      id: '/shop/$slug'
+      path: '/$slug'
+      fullPath: '/shop/$slug'
+      preLoaderRoute: typeof ShopSlugRouteImport
+      parentRoute: typeof ShopRoute
+    }
     '/checkout/return': {
       id: '/checkout/return'
       path: '/checkout/return'
@@ -384,6 +442,18 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface ShopRouteChildren {
+  ShopSlugRoute: typeof ShopSlugRoute
+  ShopCartRoute: typeof ShopCartRoute
+}
+
+const ShopRouteChildren: ShopRouteChildren = {
+  ShopSlugRoute: ShopSlugRoute,
+  ShopCartRoute: ShopCartRoute,
+}
+
+const ShopRouteWithChildren = ShopRoute._addFileChildren(ShopRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
@@ -395,6 +465,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
   RefundPolicyRoute: RefundPolicyRoute,
+  ShopRoute: ShopRouteWithChildren,
   UserGuideRoute: UserGuideRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
   ApiPublicHooksSweepRoute: ApiPublicHooksSweepRoute,
