@@ -114,7 +114,7 @@ function Landing() {
                 <span className="font-semibold text-gold">Focus Lens</span> is a window-scoped screen capture — not a browser extension. Nothing is ever installed into the poker site's page.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <Link to="/user-guide"><Button variant="ghost" size="sm">User guide</Button></Link>
+                <Link to="/user-guide"><Button variant="ghost" size="sm">User manual</Button></Link>
                 <Link to="/how-to-play"><Button variant="ghost" size="sm">How to play</Button></Link>
                 <Link to="/faq"><Button variant="ghost" size="sm">FAQ</Button></Link>
                 <Link to="/disclaimer"><Button variant="ghost" size="sm">Disclaimer</Button></Link>
@@ -181,7 +181,7 @@ export function SiteNav() {
           <Link to="/pricing"><Button variant="ghost" size="sm">Pricing</Button></Link>
           <Link to="/demo"><Button variant="ghost" size="sm">Demo</Button></Link>
           <Link to="/how-to-play"><Button variant="ghost" size="sm">How to play</Button></Link>
-          <Link to="/user-guide"><Button variant="ghost" size="sm">Guide</Button></Link>
+          <Link to="/user-guide"><Button variant="ghost" size="sm">Manual</Button></Link>
           <Link to="/faq"><Button variant="ghost" size="sm">FAQ</Button></Link>
         </div>
         <div className="flex items-center gap-2">
@@ -199,7 +199,7 @@ export function SiteFooter() {
       <div className="flex flex-wrap justify-center gap-4">
         <Link to="/pricing" className="hover:text-foreground">Pricing</Link>
         <Link to="/how-to-play" className="hover:text-foreground">How to play</Link>
-        <Link to="/user-guide" className="hover:text-foreground">User guide</Link>
+        <Link to="/user-guide" className="hover:text-foreground">User manual</Link>
         <Link to="/faq" className="hover:text-foreground">FAQ</Link>
         <Link to="/disclaimer" className="hover:text-foreground">Disclaimer</Link>
         <Link to="/refund-policy" className="hover:text-foreground">Refunds</Link>

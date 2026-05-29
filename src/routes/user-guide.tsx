@@ -6,14 +6,15 @@ import { Clock, Eye, AlertTriangle, CheckCircle2 } from "lucide-react";
 export const Route = createFileRoute("/user-guide")({
   head: () => ({
     meta: [
-      { title: "User Guide — Poker Paladin" },
+      { title: "User Manual — Poker Paladin" },
       { name: "description", content: "Two-minute setup, the live hand flow, and troubleshooting for Poker Paladin's screen-reading co-pilot." },
-      { property: "og:title", content: "Poker Paladin User Guide" },
+      { property: "og:title", content: "Poker Paladin User Manual" },
       { property: "og:description", content: "Setup, live flow, troubleshooting." },
     ],
   }),
   component: UserGuide,
 });
+
 
 function UserGuide() {
   return (
@@ -21,7 +22,8 @@ function UserGuide() {
       <SiteNav />
       <div className="relative z-10 mx-auto max-w-4xl px-4">
         <header className="py-12 text-center">
-          <p className="font-data text-xs uppercase tracking-[0.4em] text-gold">User guide</p>
+          <p className="font-data text-xs uppercase tracking-[0.4em] text-gold">User manual</p>
+
           <h1 className="mt-3 font-display text-4xl font-black md:text-5xl">
             From <span className="text-wizard">zero</span> to <span className="text-gold">summoned</span> in 2 minutes.
           </h1>
@@ -56,20 +58,21 @@ function UserGuide() {
             <div className="rounded-lg border border-border bg-card/40 p-4">
               <div className="font-display font-bold">Standard tier · SCAN NOW</div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Paladin auto-scans every 8 seconds (free, doesn't burn hours) and you can tap <span className="text-matrix font-semibold">SCAN NOW</span> any time for an on-demand read. Hit <span className="text-gold font-semibold">PALADIN SAYS</span> when it's your turn and the verdict drops in 5–7 seconds.
+                Paladin auto-scans every 8 seconds (free, doesn't burn hours) and you can tap <span className="text-matrix font-semibold">SCAN NOW</span> any time for an on-demand read. The verdict in <span className="text-gold font-semibold">PALADIN SAYS</span> populates on its own the moment the scan lands — no extra button to press.
               </p>
             </div>
             <div className="rounded-lg border border-wizard/40 bg-wizard/5 p-4">
               <div className="font-display font-bold text-wizard">Pro tier · GO LIVE</div>
               <p className="mt-2 text-sm text-muted-foreground">
-                Leave Go Live on. The paladin re-reads the table every 2.5 seconds and locks the verdict the instant action gets to you. Don't switch tabs — the capture pauses.
+                Leave Go Live on. The paladin re-reads the table every 2.5 seconds and the verdict auto-updates in PALADIN SAYS. Don't switch tabs — the capture pauses.
               </p>
             </div>
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            The <span className="text-gold font-semibold">PALADIN SAYS</span> panel shows one of: FOLD · CHECK · CALL · BET (size) · RAISE (size) · ALL IN. The verdict only ever displays when it's actually your turn — between actions it shows "Waiting for your turn" so you're never reading a stale call.
+            The <span className="text-gold font-semibold">PALADIN SAYS</span> panel shows one of: FOLD · CHECK · CALL · BET (size) · RAISE (size) · ALL IN. It refreshes automatically after every scan and locks the last verdict between actions so you never read a stale call.
           </p>
         </Section>
+
 
         {/* TROUBLESHOOTING */}
         <Section icon={AlertTriangle} title="C · Troubleshooting">

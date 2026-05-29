@@ -93,11 +93,10 @@ export function Recommendation({ game }: { game: GameApi }) {
     }, 10);
   };
 
-  // Auto-recompute ONLY when it's actually the hero's turn to act. Between
-  // turns we leave the last verdict frozen (or cleared if the street moved),
-  // so the panel never flips to a phantom "Fold" because opponents acted.
+  // Auto-recompute whenever the table state changes and we have enough cards.
+  // The verdict populates on its own — the user should never have to click for it.
   useEffect(() => {
-    if (ready && !busy && heroToAct) run();
+    if (ready && !busy) run();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streetKey, pot, toCall, heroToAct, activeOpponents.length]);
 
@@ -122,7 +121,7 @@ export function Recommendation({ game }: { game: GameApi }) {
           {frozen ? (
             <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" /> Locked · waiting for your turn</span>
           ) : (
-            "What to do"
+            "Paladin says"
           )}
         </div>
         {showVerdict && decision ? (
@@ -131,15 +130,16 @@ export function Recommendation({ game }: { game: GameApi }) {
           </div>
         ) : (
           <div className="font-display text-lg font-bold text-muted-foreground">
-            {heroToAct ? "Reading…" : "Waiting for your turn"}
+            {ready ? "Reading…" : "Waiting for cards"}
           </div>
         )}
       </div>
 
-      <Button onClick={run} disabled={!ready || busy} className="mt-3 w-full gap-2 font-bold">
+      <Button onClick={run} disabled={!ready || busy} variant="secondary" className="mt-3 w-full gap-2 font-bold">
         <Calculator className="h-4 w-4" />
-        {busy ? "Crunching…" : "PALADIN SAYS"}
+        {busy ? "Crunching…" : "Recalculate"}
       </Button>
+
 
       {showVerdict && decision && (
         <div className="mt-3 space-y-3">
