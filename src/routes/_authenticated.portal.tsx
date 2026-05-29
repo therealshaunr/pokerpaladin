@@ -150,7 +150,7 @@ function Portal() {
                         Signed up {new Date(r.created_at).toLocaleDateString()}
                       </div>
                     </div>
-                    <StatusBadge status={r.status} />
+                    <span className={`rounded-md px-2 py-0.5 font-data text-[10px] font-bold uppercase tracking-wider ${r.status === "qualified" ? "bg-gold/20 text-gold border border-gold/40" : r.status === "rewarded" ? "bg-matrix/20 text-matrix border border-matrix/40" : "bg-secondary text-muted-foreground"}`}>{r.status}</span>
                   </div>
                 ))}
               </div>
@@ -186,15 +186,3 @@ function Portal() {
   );
 }
 
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    pending: "bg-secondary text-muted-foreground",
-    qualified: "bg-gold/20 text-gold border border-gold/40",
-    rewarded: "bg-matrix/20 text-matrix border border-matrix/40",
-  };
-  return (
-    <span className={`rounded-md px-2 py-0.5 font-data text-[10px] font-bold uppercase tracking-wider ${map[status] ?? map.pending}`}>
-      {status}
-    </span>
-  );
-}
