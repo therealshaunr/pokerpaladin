@@ -18,13 +18,13 @@ export function AllInOneEditor({ game }: { game: GameApi }) {
 
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="rounded-xl border border-border bg-card">
-      <CollapsibleTrigger className="flex w-full items-center justify-between p-4 text-left">
-        <div className="flex items-center gap-2">
+      <CollapsibleTrigger className="relative flex w-full items-center justify-center p-4 text-center">
+        <div className="flex flex-wrap items-center justify-center gap-2">
           <Settings2 className="h-4 w-4 text-matrix" />
           <span className="font-display text-sm font-bold uppercase tracking-wide">All-in-One Editor</span>
           <span className="font-data text-[10px] uppercase tracking-wider text-muted-foreground">seats · blinds · clock</span>
         </div>
-        <ChevronDown className={cn("h-4 w-4 transition", open && "rotate-180")} />
+        <ChevronDown className={cn("absolute right-4 h-4 w-4 transition", open && "rotate-180")} />
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-5 border-t border-border p-4">
 

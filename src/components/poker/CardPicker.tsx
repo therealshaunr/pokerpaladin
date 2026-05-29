@@ -35,17 +35,17 @@ export function CardPicker({ label, cards, max, disabledKeys, onChange, accent =
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="relative flex items-center justify-center">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">
           {label} <span className="opacity-60">({cards.length}/{max})</span>
         </span>
         {cards.length > 0 && (
-          <button onClick={() => onChange([])} className="text-xs text-muted-foreground hover:text-foreground">
+          <button onClick={() => onChange([])} className="absolute right-0 text-xs text-muted-foreground hover:text-foreground">
             clear
           </button>
         )}
       </div>
-      <div className="flex flex-wrap items-center gap-1.5">
+      <div className="flex flex-wrap items-center justify-center gap-1.5">
         {cards.map((c) => (
           <button
             key={cardKey(c)}

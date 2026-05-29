@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ScanEye, Radio, BarChart3, Mic, Smartphone, Puzzle, Check, ShieldAlert, Sparkles, Apple } from "lucide-react";
+import { ScanEye, Radio, BarChart3, Mic, Smartphone, Puzzle, Check, ShieldAlert, Sparkles, Apple, ShoppingBag } from "lucide-react";
 import { PocketQR } from "@/components/PocketQRCard";
 import heroImg from "@/assets/paladin-hero.jpg";
 
@@ -126,6 +126,29 @@ function Landing() {
             </div>
           </div>
         </section>
+
+        {/* PALADIN ARMORY — Merch shop showcase */}
+        <section className="my-10 rounded-2xl border border-gold/50 bg-gradient-to-br from-gold/10 via-card to-transparent p-6 md:p-8 shadow-[0_0_60px_-20px_rgba(212,175,76,0.6)]">
+          <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
+            <div className="text-center md:text-left">
+              <p className="font-data text-xs uppercase tracking-[0.3em] text-gold">The Paladin Armory</p>
+              <h2 className="mt-2 font-display text-3xl font-black md:text-4xl">
+                Wear the <span className="text-gold">order.</span> Carry the <span className="text-wizard">creed.</span>
+              </h2>
+              <p className="mt-3 max-w-xl text-sm text-muted-foreground md:text-base">
+                Tees, hoodies, shades, socks, water bottles, stickers — branded gear for the Paladin faithful. Bundle 3+ for 10% off · free shipping over $100.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-3 md:justify-start">
+                <Link to="/shop"><Button size="lg" className="gap-2 font-bold"><ShoppingBag className="h-4 w-4" /> Visit the Armory</Button></Link>
+              </div>
+            </div>
+            <div className="hidden md:flex h-32 w-32 items-center justify-center rounded-2xl border-2 border-gold/40 bg-gold/10">
+              <ShoppingBag className="h-16 w-16 text-gold" />
+            </div>
+          </div>
+        </section>
+
+
 
 
         <section className="arcane-border my-10 p-6 md:p-8">

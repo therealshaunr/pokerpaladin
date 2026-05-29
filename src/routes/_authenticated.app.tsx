@@ -12,6 +12,7 @@ import { GoLivePanel, useSharedShare } from "@/components/poker/GoLivePanel";
 import { ScanPanel } from "@/components/poker/ScanPanel";
 import { AllInOneEditor } from "@/components/poker/AllInOneEditor";
 import { TierComparison } from "@/components/poker/TierComparison";
+import { QuickLinksRail } from "@/components/QuickLinksRail";
 import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/app")({
@@ -58,11 +59,12 @@ function AppPage() {
 
   return (
     <div className="matrix-bg min-h-dvh px-4 py-6 text-[17px] md:text-[19px] leading-relaxed">
+      <QuickLinksRail />
       <div className="relative z-10 mx-auto max-w-7xl space-y-6">
         <header className="flex items-center justify-between">
-          <div>
+          <div className="flex-1 text-center">
             <h1 className="font-display text-3xl md:text-4xl font-black leading-none">
-              POKER<span className="text-matrix"> CO-PILOT</span>
+              POKER<span className="text-matrix"> PALADIN</span>
             </h1>
             <p className="font-data text-base text-muted-foreground">{variant.label} · {street} · {tier === "pro" ? "Pro" : "Standard"}</p>
           </div>

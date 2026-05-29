@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { amIAdmin } from "@/lib/admin.functions";
 import { SupportInbox } from "@/components/SupportInbox";
 import { PocketPairModal } from "@/components/PocketQRCard";
+import { QuickLinksRail } from "@/components/QuickLinksRail";
 import { Button } from "@/components/ui/button";
 import { Spade, LogOut, Play, Puzzle, Smartphone, Gift, Copy, Check, Users, Shield, ShoppingBag } from "lucide-react";
 
@@ -60,6 +61,7 @@ function Portal() {
 
   return (
     <div className="matrix-bg min-h-dvh px-4 py-8">
+      <QuickLinksRail />
       <div className="relative z-10 mx-auto max-w-5xl space-y-6">
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-3">
