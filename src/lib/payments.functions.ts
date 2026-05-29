@@ -75,7 +75,7 @@ export const createCheckoutSession = createServerFn({ method: "POST" })
         mode: isRecurring ? "subscription" : "payment",
         ui_mode: "embedded_page",
         return_url: data.returnUrl,
-        automatic_tax: { enabled: true },
+        // automatic_tax disabled — re-enable after setting a head office address in Stripe Tax settings
         ...(customerId && { customer: customerId }),
         ...(!isRecurring && { payment_intent_data: { description: productDescription } }),
         ...(data.userId && {
