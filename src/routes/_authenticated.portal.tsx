@@ -5,8 +5,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { amIAdmin } from "@/lib/admin.functions";
 import { SupportInbox } from "@/components/SupportInbox";
+import { PocketPairModal } from "@/components/PocketQRCard";
 import { Button } from "@/components/ui/button";
 import { Spade, LogOut, Play, Puzzle, Smartphone, Gift, Copy, Check, Users, Shield, ShoppingBag } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/portal")({
   component: Portal,
@@ -25,6 +27,8 @@ function Portal() {
   const [copied, setCopied] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [blockedOpen, setBlockedOpen] = useState(false);
+  const [pairOpen, setPairOpen] = useState(false);
+
 
   useEffect(() => {
     if (!user) return;
@@ -206,11 +210,12 @@ function Portal() {
             <div className="mt-3 font-display text-lg font-bold">Extension <span className="ml-1 text-[10px] font-data uppercase tracking-wider text-gold">soon</span></div>
             <p className="mt-1 text-xs text-muted-foreground">Browser companion — the Paladin's apprentices are sharpening their blades.</p>
           </Link>
-          <Link to="/coming-soon" className="group rounded-2xl border border-border bg-card p-6 transition hover:border-gold hover:bg-card/80">
+          <button type="button" onClick={() => setPairOpen(true)} className="group rounded-2xl border border-border bg-card p-6 text-left transition hover:border-gold hover:bg-card/80">
             <Smartphone className="h-6 w-6 text-gold" />
-            <div className="mt-3 font-display text-lg font-bold">Mobile view <span className="ml-1 text-[10px] font-data uppercase tracking-wider text-gold">soon</span></div>
-            <p className="mt-1 text-xs text-muted-foreground">Pair your phone to mirror Paladin's verdicts while you play.</p>
-          </Link>
+            <div className="mt-3 font-display text-lg font-bold">Paladin Pocket <span className="ml-1 text-[10px] font-data uppercase tracking-wider text-matrix">live</span></div>
+            <p className="mt-1 text-xs text-muted-foreground">Pair your phone to mirror every verdict in real time. Tap to show QR.</p>
+          </button>
+
         </section>
 
         <section className="grid gap-4 md:grid-cols-1">
@@ -246,6 +251,8 @@ function Portal() {
           </div>
         </div>
       )}
+      <PocketPairModal open={pairOpen} onClose={() => setPairOpen(false)} />
+
     </div>
   );
 }

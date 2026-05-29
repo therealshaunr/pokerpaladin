@@ -13,6 +13,7 @@ import { Route as UserGuideRouteImport } from './routes/user-guide'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as PocketRouteImport } from './routes/pocket'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HowToPlayRouteImport } from './routes/how-to-play'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -23,6 +24,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ShopCartRouteImport } from './routes/shop.cart'
 import { Route as ShopSlugRouteImport } from './routes/shop.$slug'
+import { Route as PocketInstallRouteImport } from './routes/pocket.install'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated.portal'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
@@ -48,6 +50,11 @@ const RefundPolicyRoute = RefundPolicyRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PocketRoute = PocketRouteImport.update({
+  id: '/pocket',
+  path: '/pocket',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -99,6 +106,11 @@ const ShopSlugRoute = ShopSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ShopRoute,
 } as any)
+const PocketInstallRoute = PocketInstallRouteImport.update({
+  id: '/install',
+  path: '/install',
+  getParentRoute: () => PocketRoute,
+} as any)
 const CheckoutReturnRoute = CheckoutReturnRouteImport.update({
   id: '/checkout/return',
   path: '/checkout/return',
@@ -139,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/how-to-play': typeof HowToPlayRoute
   '/login': typeof LoginRoute
+  '/pocket': typeof PocketRouteWithChildren
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/shop': typeof ShopRouteWithChildren
@@ -147,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
   '/checkout/return': typeof CheckoutReturnRoute
+  '/pocket/install': typeof PocketInstallRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop/cart': typeof ShopCartRoute
   '/api/public/hooks/sweep': typeof ApiPublicHooksSweepRoute
@@ -160,6 +174,7 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/how-to-play': typeof HowToPlayRoute
   '/login': typeof LoginRoute
+  '/pocket': typeof PocketRouteWithChildren
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/shop': typeof ShopRouteWithChildren
@@ -168,6 +183,7 @@ export interface FileRoutesByTo {
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
   '/checkout/return': typeof CheckoutReturnRoute
+  '/pocket/install': typeof PocketInstallRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop/cart': typeof ShopCartRoute
   '/api/public/hooks/sweep': typeof ApiPublicHooksSweepRoute
@@ -183,6 +199,7 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/how-to-play': typeof HowToPlayRoute
   '/login': typeof LoginRoute
+  '/pocket': typeof PocketRouteWithChildren
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/shop': typeof ShopRouteWithChildren
@@ -191,6 +208,7 @@ export interface FileRoutesById {
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/portal': typeof AuthenticatedPortalRoute
   '/checkout/return': typeof CheckoutReturnRoute
+  '/pocket/install': typeof PocketInstallRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop/cart': typeof ShopCartRoute
   '/api/public/hooks/sweep': typeof ApiPublicHooksSweepRoute
@@ -206,6 +224,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/how-to-play'
     | '/login'
+    | '/pocket'
     | '/pricing'
     | '/refund-policy'
     | '/shop'
@@ -214,6 +233,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/portal'
     | '/checkout/return'
+    | '/pocket/install'
     | '/shop/$slug'
     | '/shop/cart'
     | '/api/public/hooks/sweep'
@@ -227,6 +247,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/how-to-play'
     | '/login'
+    | '/pocket'
     | '/pricing'
     | '/refund-policy'
     | '/shop'
@@ -235,6 +256,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/portal'
     | '/checkout/return'
+    | '/pocket/install'
     | '/shop/$slug'
     | '/shop/cart'
     | '/api/public/hooks/sweep'
@@ -249,6 +271,7 @@ export interface FileRouteTypes {
     | '/faq'
     | '/how-to-play'
     | '/login'
+    | '/pocket'
     | '/pricing'
     | '/refund-policy'
     | '/shop'
@@ -257,6 +280,7 @@ export interface FileRouteTypes {
     | '/_authenticated/app'
     | '/_authenticated/portal'
     | '/checkout/return'
+    | '/pocket/install'
     | '/shop/$slug'
     | '/shop/cart'
     | '/api/public/hooks/sweep'
@@ -272,6 +296,7 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   HowToPlayRoute: typeof HowToPlayRoute
   LoginRoute: typeof LoginRoute
+  PocketRoute: typeof PocketRouteWithChildren
   PricingRoute: typeof PricingRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
   ShopRoute: typeof ShopRouteWithChildren
@@ -309,6 +334,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pocket': {
+      id: '/pocket'
+      path: '/pocket'
+      fullPath: '/pocket'
+      preLoaderRoute: typeof PocketRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -381,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShopSlugRouteImport
       parentRoute: typeof ShopRoute
     }
+    '/pocket/install': {
+      id: '/pocket/install'
+      path: '/install'
+      fullPath: '/pocket/install'
+      preLoaderRoute: typeof PocketInstallRouteImport
+      parentRoute: typeof PocketRoute
+    }
     '/checkout/return': {
       id: '/checkout/return'
       path: '/checkout/return'
@@ -442,6 +481,17 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface PocketRouteChildren {
+  PocketInstallRoute: typeof PocketInstallRoute
+}
+
+const PocketRouteChildren: PocketRouteChildren = {
+  PocketInstallRoute: PocketInstallRoute,
+}
+
+const PocketRouteWithChildren =
+  PocketRoute._addFileChildren(PocketRouteChildren)
+
 interface ShopRouteChildren {
   ShopSlugRoute: typeof ShopSlugRoute
   ShopCartRoute: typeof ShopCartRoute
@@ -463,6 +513,7 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   HowToPlayRoute: HowToPlayRoute,
   LoginRoute: LoginRoute,
+  PocketRoute: PocketRouteWithChildren,
   PricingRoute: PricingRoute,
   RefundPolicyRoute: RefundPolicyRoute,
   ShopRoute: ShopRouteWithChildren,
