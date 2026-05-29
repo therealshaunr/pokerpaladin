@@ -6,7 +6,9 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  isRedirect,
 } from "@tanstack/react-router";
+import { PaladinBot } from "@/components/PaladinBot";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
@@ -34,9 +36,19 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
-  console.error(error);
   const router = useRouter();
 
+  // If TanStack threw a redirect (e.g. an auth-gated route bouncing to /login),
+  // honor it instead of rendering a hard error screen.
+  useEffect(() => {
+    if (isRedirect(error)) {
+      router.navigate(error.options as never);
+    }
+  }, [error, router]);
+
+  if (isRedirect(error)) return null;
+
+  console.error(error);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -119,12 +131,16 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
+  const path = router.state.location.pathname;
+  const hideBot = path.startsWith("/pocket"); // keep the mobile mirror clean
 
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
         <Outlet />
+        {!hideBot && <PaladinBot />}
       </AuthProvider>
     </QueryClientProvider>
   );
