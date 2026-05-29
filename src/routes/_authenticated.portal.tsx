@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/portal")({
 
 
 interface Profile { name: string | null; display_name: string | null; phone: string | null; referral_code: string | null }
-interface Sub { tier: string; interval: string; status: string; current_period_end: string | null; activation_id: string }
+interface Sub { tier: string; interval: string; status: string; current_period_end: string | null; activation_id: string; suspended: boolean; frozen: boolean; cancel_at_period_end: boolean }
 interface Referral { id: string; referee_email: string; status: string; created_at: string; qualified_at: string | null; rewarded_at: string | null }
 function Portal() {
   const { user, signOut } = useAuth();
@@ -24,6 +24,7 @@ function Portal() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [copied, setCopied] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [blockedOpen, setBlockedOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -31,7 +32,7 @@ function Portal() {
     (async () => {
       const [{ data: p }, { data: s }, { data: r }] = await Promise.all([
         supabase.from("profiles").select("name, display_name, phone, referral_code").eq("id", user.id).maybeSingle(),
-        supabase.from("subscriptions").select("tier, interval, status, current_period_end, activation_id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("subscriptions").select("tier, interval, status, current_period_end, activation_id, suspended, frozen, cancel_at_period_end").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
         supabase.from("referrals").select("id, referee_email, status, created_at, qualified_at, rewarded_at").eq("referrer_id", user.id).order("created_at", { ascending: false }),
       ]);
       setProfile(p as Profile | null);
@@ -162,11 +163,43 @@ function Portal() {
         </section>
 
         <section className="grid gap-4 md:grid-cols-3">
-          <Link to="/app" className="group rounded-2xl border border-border bg-card p-6 transition hover:border-primary">
-            <Play className="h-6 w-6 text-matrix" />
-            <div className="mt-3 font-display text-lg font-bold">Launch Paladin</div>
-            <p className="mt-1 text-xs text-muted-foreground">Open the live analyzer. Share your poker screen and get real-time guidance.</p>
-          </Link>
+          {(() => {
+            const activeStatuses = ["active", "trialing"];
+            const launchable = !!sub && activeStatuses.includes(sub.status) && !sub.suspended && !sub.frozen;
+            const reason = !sub
+              ? "no-plan"
+              : sub.suspended
+              ? "suspended"
+              : sub.frozen
+              ? "frozen"
+              : !activeStatuses.includes(sub.status)
+              ? sub.status
+              : null;
+            if (launchable) {
+              return (
+                <Link to="/app" className="group rounded-2xl border border-border bg-card p-6 transition hover:border-primary">
+                  <Play className="h-6 w-6 text-matrix" />
+                  <div className="mt-3 font-display text-lg font-bold">Launch Paladin</div>
+                  <p className="mt-1 text-xs text-muted-foreground">Open the live analyzer. Share your poker screen and get real-time guidance.</p>
+                </Link>
+              );
+            }
+            return (
+              <button
+                type="button"
+                onClick={() => setBlockedOpen(true)}
+                className="group relative cursor-not-allowed rounded-2xl border border-destructive/40 bg-black p-6 text-left transition hover:border-destructive"
+                aria-disabled="true"
+              >
+                <Play className="h-6 w-6 text-muted-foreground/40" />
+                <div className="mt-3 font-display text-lg font-bold text-muted-foreground/60 line-through">Launch Paladin</div>
+                <p className="mt-1 text-xs text-destructive font-data uppercase tracking-wider">
+                  {reason === "no-plan" ? "No active plan" : reason === "suspended" ? "Account suspended" : reason === "frozen" ? "Account frozen" : `Plan ${reason}`}
+                </p>
+                <p className="mt-1 text-[10px] text-muted-foreground">Click for details.</p>
+              </button>
+            );
+          })()}
           <div className="rounded-2xl border border-border bg-card p-6 opacity-60">
             <Puzzle className="h-6 w-6" />
             <div className="mt-3 font-display text-lg font-bold">Extension</div>
