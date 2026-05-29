@@ -1,13 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { amIAdmin } from "@/lib/admin.functions";
+import { SupportInbox } from "@/components/SupportInbox";
 import { Button } from "@/components/ui/button";
-import { Spade, LogOut, Play, Puzzle, Smartphone, Gift, Copy, Check, Users } from "lucide-react";
+import { Spade, LogOut, Play, Puzzle, Smartphone, Gift, Copy, Check, Users, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/portal")({
   component: Portal,
 });
+
 
 interface Profile { name: string | null; display_name: string | null; phone: string | null; referral_code: string | null }
 interface Sub { tier: string; interval: string; status: string; current_period_end: string | null; activation_id: string }
