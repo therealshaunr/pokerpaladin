@@ -37,32 +37,73 @@ const SAMPLE = {
   ],
 };
 
+function useDealAnimation() {
+  // step: 0 = nothing, 1-2 = hero cards, 3-5 = flop, 6 = stats, 7 = verdict
+  const [step, setStep] = useState(0);
+  const [tick, setTick] = useState(0); // for replay
+  useEffect(() => {
+    setStep(0);
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const schedule = [350, 700, 1300, 1650, 2000, 2500, 3100];
+    schedule.forEach((ms, i) => {
+      timers.push(setTimeout(() => setStep(i + 1), ms));
+    });
+    return () => timers.forEach(clearTimeout);
+  }, [tick]);
+  return { step, replay: () => setTick((t) => t + 1) };
+}
+
+function useCountUp(target: number, start: boolean, durationMs = 900, decimals = 1) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (!start) { setValue(0); return; }
+    const startTs = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - startTs) / durationMs);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setValue(target * eased);
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, start, durationMs]);
+  return value.toFixed(decimals);
+}
+
 function Demo() {
+  const { step, replay } = useDealAnimation();
+  const equity = useCountUp(SAMPLE.equity, step >= 6, 900, 1);
+  const potOdds = useCountUp(SAMPLE.potOdds, step >= 6, 900, 1);
+
   return (
     <main className="matrix-bg min-h-dvh">
       <SiteNav />
       <div className="relative z-10 mx-auto max-w-5xl px-4">
         <header className="py-10 text-center">
           <p className="font-data text-xs uppercase tracking-[0.4em] text-gold">Live Demo · No signup</p>
-          <h1 className="mt-3 font-display text-3xl font-black md:text-5xl">A real Paladin <span className="text-wizard">verdict</span>.</h1>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">This is the exact output Paladin shows mid-hand. It is a static example so you can study it — the real product reads <em>your</em> screen in real time.</p>
+          <h1 className="mt-3 font-display text-3xl font-black md:text-5xl">Watch the <span className="text-wizard">Paladin</span> work.</h1>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-muted-foreground">A real hand, played out in front of you. The live product reads <em>your</em> screen the same way — in real time.</p>
+          <button onClick={replay} className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-gold/40 bg-gold/10 px-3 py-1.5 font-data text-[11px] font-bold uppercase tracking-wider text-gold hover:bg-gold/20 transition">
+            <RotateCcw className="h-3 w-3" /> Replay hand
+          </button>
         </header>
 
         {/* TABLE */}
         <section className="felt-surface arcane-border p-6 md:p-10">
           <div className="text-center">
             <div className="font-data text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Board</div>
-            <div className="mt-2 flex justify-center gap-2">
-              {SAMPLE.board.map((c) => <Card key={c} c={c} big />)}
+            <div className="mt-2 flex justify-center gap-2 min-h-[112px] md:min-h-[128px]">
+              {SAMPLE.board.map((c, i) => <DealtCard key={`b-${c}-${i}`} c={c} visible={step >= 3 + i} big />)}
             </div>
           </div>
           <div className="mt-8 text-center">
             <div className="font-data text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Your Hand</div>
-            <div className="mt-2 flex justify-center gap-2">
-              {SAMPLE.hero.map((c) => <Card key={c} c={c} big />)}
+            <div className="mt-2 flex justify-center gap-2 min-h-[112px] md:min-h-[128px]">
+              {SAMPLE.hero.map((c, i) => <DealtCard key={`h-${c}-${i}`} c={c} visible={step >= 1 + i} big />)}
             </div>
           </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-4 font-data text-xs text-muted-foreground">
+          <div className={`mt-8 flex flex-wrap justify-center gap-4 font-data text-xs text-muted-foreground transition-all duration-500 ${step >= 6 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"}`}>
             <Stat label="Pot" value={`$${SAMPLE.pot}`} />
             <Stat label="To Call" value={`$${SAMPLE.toCall}`} />
             <Stat label="Stack" value={`$${SAMPLE.stack}`} />
@@ -71,18 +112,18 @@ function Demo() {
         </section>
 
         {/* VERDICT */}
-        <section className="arcane-border glow-wizard mt-6 p-6 md:p-8">
+        <section className={`arcane-border glow-wizard mt-6 p-6 md:p-8 transition-all duration-700 ${step >= 7 ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-4 scale-[0.98]"}`}>
           <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
             <div>
               <div className="flex items-center gap-2 font-data text-[10px] uppercase tracking-[0.3em] text-gold">
-                <Sparkles className="h-3 w-3" /> Paladin says
+                <Sparkles className="h-3 w-3 animate-pulse" /> Paladin says
               </div>
               <div className="mt-2 font-display text-5xl font-black text-wizard md:text-7xl">{SAMPLE.decision}</div>
               <div className="mt-1 font-data text-sm text-gold">{SAMPLE.size}</div>
             </div>
             <div className="grid grid-cols-3 gap-3 md:gap-4">
-              <Metric icon={Eye} label="Equity" value={`${SAMPLE.equity}%`} />
-              <Metric icon={Coins} label="Pot odds" value={`${SAMPLE.potOdds}%`} />
+              <Metric icon={Eye} label="Equity" value={`${equity}%`} />
+              <Metric icon={Coins} label="Pot odds" value={`${potOdds}%`} />
               <Metric icon={TrendingUp} label="EV" value={SAMPLE.ev} />
             </div>
           </div>
@@ -90,7 +131,7 @@ function Demo() {
             <div className="font-data text-[10px] uppercase tracking-[0.3em] text-muted-foreground">Why</div>
             <ul className="mt-2 space-y-1.5 text-sm text-foreground">
               {SAMPLE.rationale.map((r, i) => (
-                <li key={i} className="flex gap-2">
+                <li key={i} className="flex gap-2 animate-fade-in" style={{ animationDelay: `${i * 120}ms`, animationFillMode: "both" }}>
                   <span className="text-gold">›</span>
                   <span>{r}</span>
                 </li>
@@ -113,11 +154,13 @@ function Demo() {
   );
 }
 
-function Card({ c, big }: { c: string; big?: boolean }) {
+function DealtCard({ c, big, visible }: { c: string; big?: boolean; visible: boolean }) {
   const isRed = c.includes("♥") || c.includes("♦");
   return (
-    <div className={`flex flex-col items-center justify-center rounded-md border border-border bg-white font-display font-black ${big ? "h-24 w-16 text-3xl md:h-28 md:w-20 md:text-4xl" : "h-16 w-12 text-xl"} ${isRed ? "text-red-600" : "text-black"}`}>
-      {c}
+    <div
+      className={`flex flex-col items-center justify-center rounded-md border border-border bg-white font-display font-black shadow-xl transition-all duration-500 ease-out ${big ? "h-24 w-16 text-3xl md:h-28 md:w-20 md:text-4xl" : "h-16 w-12 text-xl"} ${isRed ? "text-red-600" : "text-black"} ${visible ? "opacity-100 translate-y-0 rotate-0 scale-100" : "opacity-0 -translate-y-8 -rotate-12 scale-75"}`}
+    >
+      {visible ? c : ""}
     </div>
   );
 }
