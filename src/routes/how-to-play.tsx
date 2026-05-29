@@ -115,10 +115,10 @@ function HowToPlay() {
           <Sparkles className="mx-auto h-8 w-8 text-gold" />
           <h2 className="mt-3 font-display text-2xl font-black">Ready to deal in?</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm text-muted-foreground">
-            Read the <Link to="/user-guide" className="text-gold underline">user guide</Link> for the 2-minute setup, then summon the paladin and play your first hand with math at your back.
+            Read the <Link to="/user-guide" className="text-gold underline">user manual</Link> for the 2-minute setup, then summon the paladin and play your first hand with math at your back.
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-3">
-            <Link to="/user-guide"><Button size="lg" variant="secondary">Read the user guide</Button></Link>
+            <Link to="/user-guide"><Button size="lg" variant="secondary">Read the user manual</Button></Link>
             <Link to="/demo"><Button size="lg" className="font-bold">Try the demo →</Button></Link>
           </div>
         </section>
