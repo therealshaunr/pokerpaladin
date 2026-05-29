@@ -13,6 +13,7 @@ import { PaladinBot } from "@/components/PaladinBot";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/lib/auth";
+import { CartProvider } from "@/lib/cart";
 
 function NotFoundComponent() {
   return (
