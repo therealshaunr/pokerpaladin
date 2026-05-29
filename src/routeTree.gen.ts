@@ -22,7 +22,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as CheckoutReturnRouteImport } from './routes/checkout.return'
 import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated.portal'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
+import { Route as ApiPublicHooksSweepRouteImport } from './routes/api/public/hooks/sweep'
 
 const UserGuideRoute = UserGuideRouteImport.update({
   id: '/user-guide',
@@ -88,12 +90,22 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
   path: '/app',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
     path: '/api/public/payments/webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSweepRoute = ApiPublicHooksSweepRouteImport.update({
+  id: '/api/public/hooks/sweep',
+  path: '/api/public/hooks/sweep',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -105,9 +117,11 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/user-guide': typeof UserGuideRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
   '/checkout/return': typeof CheckoutReturnRoute
+  '/api/public/hooks/sweep': typeof ApiPublicHooksSweepRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -120,9 +134,11 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/user-guide': typeof UserGuideRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
   '/checkout/return': typeof CheckoutReturnRoute
+  '/api/public/hooks/sweep': typeof ApiPublicHooksSweepRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
@@ -137,9 +153,11 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/refund-policy': typeof RefundPolicyRoute
   '/user-guide': typeof UserGuideRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/portal': typeof AuthenticatedPortalRoute
   '/checkout/return': typeof CheckoutReturnRoute
+  '/api/public/hooks/sweep': typeof ApiPublicHooksSweepRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
@@ -154,9 +172,11 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/refund-policy'
     | '/user-guide'
+    | '/admin'
     | '/app'
     | '/portal'
     | '/checkout/return'
+    | '/api/public/hooks/sweep'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -169,9 +189,11 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/refund-policy'
     | '/user-guide'
+    | '/admin'
     | '/app'
     | '/portal'
     | '/checkout/return'
+    | '/api/public/hooks/sweep'
     | '/api/public/payments/webhook'
   id:
     | '__root__'
@@ -185,9 +207,11 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/refund-policy'
     | '/user-guide'
+    | '/_authenticated/admin'
     | '/_authenticated/app'
     | '/_authenticated/portal'
     | '/checkout/return'
+    | '/api/public/hooks/sweep'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -203,6 +227,7 @@ export interface RootRouteChildren {
   RefundPolicyRoute: typeof RefundPolicyRoute
   UserGuideRoute: typeof UserGuideRoute
   CheckoutReturnRoute: typeof CheckoutReturnRoute
+  ApiPublicHooksSweepRoute: typeof ApiPublicHooksSweepRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
@@ -299,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAppRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -306,15 +338,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/sweep': {
+      id: '/api/public/hooks/sweep'
+      path: '/api/public/hooks/sweep'
+      fullPath: '/api/public/hooks/sweep'
+      preLoaderRoute: typeof ApiPublicHooksSweepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAppRoute: typeof AuthenticatedAppRoute
   AuthenticatedPortalRoute: typeof AuthenticatedPortalRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedAppRoute: AuthenticatedAppRoute,
   AuthenticatedPortalRoute: AuthenticatedPortalRoute,
 }
@@ -335,6 +376,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundPolicyRoute: RefundPolicyRoute,
   UserGuideRoute: UserGuideRoute,
   CheckoutReturnRoute: CheckoutReturnRoute,
+  ApiPublicHooksSweepRoute: ApiPublicHooksSweepRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,27 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { amIAdmin } from "@/lib/admin.functions";
+import { SupportInbox } from "@/components/SupportInbox";
 import { Button } from "@/components/ui/button";
-import { Spade, LogOut, Play, Puzzle, Smartphone, Gift, Copy, Check, Users } from "lucide-react";
+import { Spade, LogOut, Play, Puzzle, Smartphone, Gift, Copy, Check, Users, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/portal")({
   component: Portal,
 });
 
+
 interface Profile { name: string | null; display_name: string | null; phone: string | null; referral_code: string | null }
 interface Sub { tier: string; interval: string; status: string; current_period_end: string | null; activation_id: string }
 interface Referral { id: string; referee_email: string; status: string; created_at: string; qualified_at: string | null; rewarded_at: string | null }
-
 function Portal() {
   const { user, signOut } = useAuth();
+  const checkAdmin = useServerFn(amIAdmin);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [sub, setSub] = useState<Sub | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [copied, setCopied] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!user) return;
+    checkAdmin().then((r) => setIsAdmin(r.isAdmin)).catch(() => setIsAdmin(false));
     (async () => {
       const [{ data: p }, { data: s }, { data: r }] = await Promise.all([
         supabase.from("profiles").select("name, display_name, phone, referral_code").eq("id", user.id).maybeSingle(),
@@ -32,7 +38,9 @@ function Portal() {
       setSub(s as Sub | null);
       setReferrals((r as Referral[] | null) ?? []);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
 
   const referralLink = profile?.referral_code
     ? `${window.location.origin}/login?mode=signup&ref=${profile.referral_code}`
@@ -58,9 +66,15 @@ function Portal() {
               <p className="font-data text-[11px] text-muted-foreground">Member portal</p>
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={signOut} className="gap-2">
-            <LogOut className="h-4 w-4" /> Sign out
-          </Button>
+          <div className="flex items-center gap-2">
+            {isAdmin && (
+              <Link to="/admin"><Button variant="secondary" size="sm" className="gap-2"><Shield className="h-4 w-4 text-gold" /> Admin</Button></Link>
+            )}
+            <Button variant="ghost" size="sm" onClick={signOut} className="gap-2">
+              <LogOut className="h-4 w-4" /> Sign out
+            </Button>
+          </div>
+
         </header>
 
         <section className="rounded-2xl border border-border bg-card p-6">
@@ -164,6 +178,9 @@ function Portal() {
             <p className="mt-1 text-xs text-muted-foreground">Pair your phone to mirror the recommendation — coming soon.</p>
           </div>
         </section>
+
+        <SupportInbox />
+
       </div>
     </div>
   );
