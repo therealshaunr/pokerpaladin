@@ -1,108 +1,112 @@
-# Phase 1.5 — Polish, Rebrand, and the Go-Live Fold Bug
+# Next Phase: Mobile + AI Bot + Debug Tool + Simulator
 
-Locked decisions: **The Arcanum** (Pro-tier collective), **Focus Lens** (replaces "Chrome Extension"), **Summon the Paladin →** (replaces "Deal in"), keep the interactive demo (no video loop).
-
----
-
-## 1. Landing page copy rewrite (`src/routes/index.tsx`)
-
-**New hero subheading** (replaces the current paragraph):
-> Poker Paladin tracks every card, bet, and tell on your screen in as close to real time as possible. Standard players read the table. **The Arcanum** reads the players reading the table. Want millisecond reactions and live in-hand calls? You'll need to go Pro.
-
-**Features section** — rework the third card to lead with the differentiator:
-- **Go Live (Pro)** — "The first sub-second poker co-pilot. Our Go-Live analyzer re-reads the table every heartbeat and surfaces the play before your timer ticks. This is what separates a standard player from **The Arcanum**."
-
-**Add-ons section** — replace the "Chrome Extension" card with:
-- **Focus Lens — $10/mo** · *Capture from a single window you choose, not your whole screen. Read-only pixel capture — never touches the page, never reads code, never communicates with any site.*
-- (Update the same wording in `/pricing` add-on grid.)
-
-**Trust block** — add one line: "Focus Lens is a window-scoped screen capture, not a browser extension. Nothing is ever installed into the poker site's page."
+Four independent features, built in order so you can test each as it lands.
 
 ---
 
-## 2. "Summon the Paladin →" button
+## 1. Paladin Pocket (Mobile companion — Android + iOS)
 
-- `src/components/poker/GameSetup.tsx` — change `Deal in →` to `Summon the Paladin →`.
-- Tighten the setup screen sub-copy to: *"Pick your game. Set your blinds. Summon the paladin."*
+**Approach: Installable PWA** (one codebase, both platforms, no app store wait, downloadable from the homepage today).
 
----
+- New route `/pocket` — mobile-optimized read-only view of the live Paladin session.
+- Pairing flow: portal generates a 6-digit code + QR → user scans on phone → phone calls `claimMobileLink` server fn → row in existing `mobile_links` table binds the device to the user's session.
+- Realtime: phone subscribes to a Supabase channel (`paladin:{userId}`) that the desktop app publishes equity / pot odds / decision / board to. No video — just the verdict card + table state (low bandwidth, works on cell data).
+- Web manifest + minimal service worker scoped to `/pocket` only (guarded so it never registers in the Lovable preview iframe — per PWA rules in the stack).
+- Homepage gets a "Get Paladin Pocket" section with two QR codes:
+  - **iOS QR** → opens `/pocket/install/ios` with Safari "Add to Home Screen" instructions + screenshots.
+  - **Android QR** → opens `/pocket/install/android` with Chrome "Install app" instructions.
+- Both install pages double as the landing for the QR so a single URL works.
+- Replace the current `/coming-soon` mobile card on the portal with a live "Pair phone" button.
 
-## 3. New route: `/how-to-play` (basics for novice players)
-
-Create `src/routes/how-to-play.tsx` with short, plain-English primers for each supported variant. One card per game, ~120 words each:
-
-- **Texas Hold'em** — 2 hole cards, 5 community, best 5-card hand wins.
-- **Omaha (PLO)** — 4 hole cards, must use exactly 2 + 3 board.
-- **7-Card Stud** — no community, 7 cards dealt across streets, best 5.
-- **Short Deck (6+)** — 36-card deck, flush beats full house.
-- **Razz / Stud Hi-Lo** (if supported in `VARIANTS`).
-
-Each card ends with: *"Want the paladin to play this with you? [Open the analyzer →]"*
-
-Add to `SiteNav` and `SiteFooter`.
+**Why PWA, not native**: native iOS/Android requires Apple Developer ($99/yr), Google Play ($25), build pipelines, and store review — none of which fit "downloadable from the homepage today". PWA installs in 2 taps, updates instantly when you ship, and uses the same auth/session as the web app. If you later want a store presence, the same code wraps in Capacitor.
 
 ---
 
-## 4. New route: `/user-guide` (the flow + setup checklist + troubleshooting)
+## 2. Compatibility & Security Docs
 
-Create `src/routes/user-guide.tsx` with three sections:
+New route `/help/compatibility` with three tabs:
 
-**A. Before the hand starts (2–3 min setup):**
-1. Open your poker client and join the table.
-2. In Poker Paladin → pick the variant, enter blinds/ante, set the level timer if applicable.
-3. Add seat count and your seat position.
-4. Hit **Summon the Paladin →**.
-5. Click **Share screen** (or **Focus Lens** if you have the add-on) and pick the poker window.
+- **macOS** — Screen Recording permission (System Settings → Privacy & Security → Screen Recording → enable browser), camera/mic prompts, Safari "Allow on Every Visit", popup blocker exceptions.
+- **Windows 11** — Edge/Chrome screen-share consent, Defender SmartScreen, "Choose what to share" dialog walkthrough, notification permissions.
+- **Mobile** — iOS Safari "Add to Home Screen", Android install prompt, background-tab throttling notes.
 
-**B. During the hand:**
-- Add hole cards once dealt.
-- Standard tier: hit **Best play** when it's your turn.
-- Pro tier: leave **Go Live** on — the verdict updates automatically and locks the moment it's your action.
+Each tab: numbered steps, screenshots (generated), and a "Still stuck? Ask Paladin Bot" CTA that opens the AI bot pre-loaded with that context.
 
-**C. Troubleshooting:**
-- Verdict feels stale → confirm the timer chip says "Reading…"; re-share the correct window.
-- Cards not detected → drag the capture region tighter, increase your client's card size.
-- Verdict flipped between turns → *now fixed; see release notes*. If you still see it, file a ticket from `/portal`.
-- Voice silent (Pro) → enable mic permission for the browser tab.
-
-Add to `SiteNav` and `SiteFooter`.
+Link from: portal header (help icon), Go Live panel error states, and the Paladin Bot itself.
 
 ---
 
-## 5. **BUG FIX — "Phantom Fold" in Go-Live**
+## 3. Paladin AI Bot
 
-**Symptom (user-reported):** While Go-Live is running, the panel correctly says "Raise/Call", then between actions flips to "Fold" before it's the hero's turn again. Disorienting and damages trust.
+Floating chat widget available everywhere when signed in (portal, /app, /shop, /help).
 
-**Root cause** (`src/components/poker/Recommendation.tsx`):
-The auto-recompute `useEffect` runs on every change to `heroKey/boardKey/pot/toCall/heroToAct/activeOpponents.length` regardless of whose turn it is. As opponents act, `toCall`/`pot` mutate, `decide()` re-runs against a state where it's not the hero's decision, and the worst-case branch resolves to **Fold**, overwriting the previously shown verdict.
+**Capabilities**:
+- Answers questions about the site (pricing, plans, refund policy, how Go Live vs Scan differ).
+- Quick poker reference: rules + hand rankings for NLHE, PLO, Stud, Razz, etc. (pulled from `src/lib/poker/types.ts` variants).
+- Troubleshooting: walks user through compatibility doc steps interactively, can suggest opening the debug tool (see #4) and reading captured logs.
+- Has the user's tenant context: current plan, recent scan events, recent support tickets — so it can say "I see your last Go Live session ended 3 min ago with an error, here's likely cause."
 
-**Fix (frontend-only, surgical):**
-1. **Gate the auto-run on `heroToAct`:** only call `run()` when `ready && !busy && heroToAct`. When `heroToAct === false`, leave the existing `result` mounted *only* if it was computed for the current street; otherwise clear it.
-2. **Stamp each result with a street/board signature.** Track `lastSolvedKey = boardKey + heroKey`. On opponent action (board unchanged, heroToAct false), keep the last verdict frozen and dim it with a "Locked — waiting for your turn" badge instead of recomputing.
-3. **On board change while not hero's turn** (new flop/turn/river dealt while folded): clear `result` and show "Waiting for your turn" — never display a stale verdict from a previous street.
-4. **Remove the eslint-disable line** once deps are corrected.
-
-This eliminates the phantom Fold entirely: the panel only ever shows a verdict that was computed for *this hero, this street, this decision point*.
-
----
-
-## 6. Files touched
-
-- `src/routes/index.tsx` — hero copy, features, add-on card, trust block.
-- `src/routes/pricing.tsx` — Focus Lens rename + copy.
-- `src/components/poker/GameSetup.tsx` — button + subhead.
-- `src/components/poker/Recommendation.tsx` — phantom-Fold fix.
-- `src/routes/how-to-play.tsx` — **new**.
-- `src/routes/user-guide.tsx` — **new**.
-- `src/routeTree.gen.ts` — register the two new routes.
-- `SiteNav` / `SiteFooter` (inside `index.tsx`) — add Guide + How to Play links.
-
-No DB, no backend, no new packages. Pure UI + one logic fix.
+**Tech**:
+- New server fn `chatWithPaladinBot` using AI SDK + Lovable AI Gateway (`google/gemini-3-flash-preview` default — cheap + fast, matches your credit concern).
+- System prompt bundles: site copy summary, poker rules cheatsheets, compatibility steps, and user context fetched server-side.
+- Tools the bot can call: `getMyPlan`, `getMyRecentErrors`, `openDebugCapture`, `linkToCompatibilityDoc(os)`.
+- UI: `<PaladinBot />` widget in `__root.tsx`, hidden on landing/login. Streamed responses, markdown rendering.
 
 ---
 
-## What's NOT in this phase
+## 4. Debug Capture Tool
 
-- Phase 2 (Stripe/PayPal webhooks, license keys, usage metering, support tickets, admin portal) — untouched, picks up next.
-- Demo video loop — explicitly skipped per your pick.
-- Voice Companion bundling decision — still open from earlier; will confirm at start of Phase 2.
+New portal card "Run diagnostics". When launched:
+
+- Opens `/portal/debug` with a "Start capture" button.
+- Captures (client-side, scoped to current tab):
+  - Browser + OS + screen resolution + devicePixelRatio
+  - Active plan, role, user id
+  - Last 200 console log lines (intercepted via `console.*` wrapper)
+  - Last 50 network requests (fetch/xhr URLs + status, no bodies)
+  - Last 20 scan_events from DB
+  - Active permissions (camera, mic, display-capture state)
+- User clicks "Reproduce issue" → app opens in a new tab with capture still running → user does the broken thing → returns and clicks "Stop & send".
+- POSTs the bundle to `submitDebugCapture` server fn → stored in new `debug_captures` table → linked to a support ticket → admin sees it in `SupportInbox`.
+- Bot can read the capture and explain it.
+
+---
+
+## 5. NL Hold'em Simulator ("Take it for a drive")
+
+New route `/simulator` linked from the landing page hero and portal.
+
+**Setup screen**: variant (locked to NLHE for v1), # players 2–8, starting stack, your name. Big "Deal" button.
+
+**Table**:
+- 8 seats around an oval felt (reuses `PokerTable` styling). Seat 1 = hero, bottom-right, cards face-up.
+- Other seats: face-down cards, AI opponents with simple ranges (tight/loose mix).
+- Action buttons for hero only: **Check / Fold / Call / Raise** with a single dollar input (no preset sizings).
+- Hands play out preflop → flop → turn → river → showdown using existing `engine.ts` evaluator. Opponents act with basic equity-based logic.
+- Pot, stacks, dealer button update per hand.
+
+**Paladin toggle** (top-right of table):
+- OFF by default. Toggling ON shows: "⚠️ Simulation mode — full Paladin selects your live monitor."
+- When ON, a slim panel appears with live equity %, pot odds %, EV, and decision verdict — recalculated every street.
+- Calculations use the same `strategy.ts` the real app uses, so the user sees the actual product brain working on their actual cards.
+- Code obfuscation: simulator-only strategy calls go through a wrapper that strips internals (no rationale source, no weights) — just outputs. The full `strategy.ts` is never bundled into the simulator chunk; the wrapper lives in `src/lib/sim/paladin-lite.ts` and only exposes `evaluate(hero, board, pot, toCall) → { equity, potOdds, ev, decision }`.
+
+---
+
+## Build Order (so you can test as we go)
+
+1. **Simulator** (~30 min) — pure frontend, no infra. Instant gratification + demo asset.
+2. **Compatibility docs** (~15 min) — static content, helps right now.
+3. **Paladin Pocket PWA + QR pairing** (~45 min) — needs `mobile_links` already exists, add 1 migration for `device_label`.
+4. **Debug capture tool** (~30 min) — new `debug_captures` table + UI.
+5. **Paladin AI Bot** (~45 min) — last because it consumes the most credits and benefits from having the docs + debug tool to reference.
+
+## Technical Notes
+
+- All new routes follow `createFileRoute` dot-naming.
+- Bot uses AI SDK `streamText` + `useChat` per stack convention; costs ~$0.0001 per short message on Gemini Flash.
+- PWA service worker is guarded: only registers on `pokerpaladin.lovable.app` + custom domain, never in preview iframe.
+- Simulator runs 100% client-side — zero server cost.
+- One Supabase migration total (debug_captures + mobile_links.device_label).
+
+Approve and I'll build in the listed order, pausing after the simulator so you can take it for a drive.
