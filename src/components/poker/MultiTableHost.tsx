@@ -99,7 +99,7 @@ export function MultiTableHost({ tier }: { tier: Tier }) {
             slotId={s.id}
             tier={tier}
             isActive={s.id === activeId}
-            onMeta={(pot, live) => onMeta(s.id, pot, live)}
+            onMeta={(pot: number, live: boolean) => onMeta(s.id, pot, live)}
           />
         </div>
       ))}
