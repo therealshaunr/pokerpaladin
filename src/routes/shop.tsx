@@ -54,30 +54,61 @@ function Section({ title, items }: { title: string; items: typeof PRODUCTS }) {
   if (!items.length) return null;
   return (
     <section className="mb-12">
-      <h2 className="mb-4 font-display text-2xl font-black uppercase tracking-wide">{title}</h2>
+      <h2 className="mb-4 text-center font-display text-2xl font-black uppercase tracking-wide">{title}</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((p) => (
-          <Link
-            key={p.slug}
-            to="/shop/$slug"
-            params={{ slug: p.slug }}
-            className="group relative rounded-2xl border border-border bg-card p-5 transition hover:border-gold hover:shadow-[0_0_30px_-10px_rgba(212,175,76,0.4)]"
-          >
-            {p.badge && (
-              <span className="absolute right-3 top-3 rounded-md border border-gold/50 bg-gold/10 px-2 py-0.5 font-data text-[10px] font-bold uppercase tracking-wider text-gold">{p.badge}</span>
-            )}
-            <div className="aspect-square rounded-xl border border-border bg-secondary/30 p-4 group-hover:border-gold/40 transition">
-              <CrestArt slug={p.slug} />
-            </div>
-            <div className="mt-4 flex items-start justify-between gap-2">
-              <h3 className="font-display text-lg font-bold">{p.name}</h3>
-              <span className="font-data text-sm font-bold text-gold">{fmtPrice(p.price)}</span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">{p.blurb}</p>
-          </Link>
+          <ProductCard key={p.slug} slug={p.slug} />
         ))}
       </div>
     </section>
+  );
+}
+
+function ProductCard({ slug }: { slug: string }) {
+  const p = productBySlug(slug)!;
+  const { add } = useCart();
+  const [added, setAdded] = useState(false);
+
+  const hasOptions = !!(p.sizes || p.fits || p.colors);
+
+  const quickAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    add({
+      slug: p.slug,
+      size: p.sizes?.[0]?.id,
+      fit: p.fits?.[0]?.id,
+      color: p.colors?.[0]?.id,
+    });
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1600);
+  };
+
+  return (
+    <div className="group relative rounded-2xl border border-border bg-card p-5 transition hover:border-gold hover:shadow-[0_0_30px_-10px_rgba(212,175,76,0.4)]">
+      {p.badge && (
+        <span className="absolute right-3 top-3 z-10 rounded-md border border-gold/50 bg-gold/10 px-2 py-0.5 font-data text-[10px] font-bold uppercase tracking-wider text-gold">
+          {p.badge}
+        </span>
+      )}
+      <Link to="/shop/$slug" params={{ slug: p.slug }} className="block">
+        <div className="aspect-square rounded-xl border border-border bg-secondary/30 p-4 transition group-hover:border-gold/40">
+          <CrestArt slug={p.slug} />
+        </div>
+        <div className="mt-4 flex items-start justify-between gap-2">
+          <h3 className="font-display text-lg font-bold">{p.name}</h3>
+          <span className="font-data text-sm font-bold text-gold">{fmtPrice(p.price)}</span>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">{p.blurb}</p>
+      </Link>
+      <button
+        type="button"
+        onClick={quickAdd}
+        className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-md border border-gold/40 bg-gold/10 px-3 py-2 font-data text-[11px] font-bold uppercase tracking-wider text-gold transition hover:bg-gold/20"
+      >
+        {added ? (<><Check className="h-3.5 w-3.5" /> Added</>) : (<><Plus className="h-3.5 w-3.5" /> {hasOptions ? "Quick add (defaults)" : "Add to cart"}</>)}
+      </button>
+    </div>
   );
 }
 
