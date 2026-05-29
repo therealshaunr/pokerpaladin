@@ -252,6 +252,7 @@ export function SiteFooter() {
         <Link to="/how-to-play" className="hover:text-foreground">How to play</Link>
         <Link to="/user-guide" className="hover:text-foreground">User manual</Link>
         <Link to="/faq" className="hover:text-foreground">FAQ</Link>
+        <Link to="/about" className="hover:text-foreground">About · Veteran</Link>
         <Link to="/disclaimer" className="hover:text-foreground">Disclaimer</Link>
         <Link to="/refund-policy" className="hover:text-foreground">Refunds</Link>
         <Link to="/demo" className="hover:text-foreground">Demo</Link>

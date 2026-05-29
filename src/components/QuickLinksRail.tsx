@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight, BookOpen, ShoppingBag, HelpCircle, LifeBuoy, Smartphone, DollarSign, Sparkles } from "lucide-react";
+import { ChevronRight, BookOpen, ShoppingBag, HelpCircle, LifeBuoy, Smartphone, DollarSign, Sparkles, Gamepad2, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
   { to: "/user-guide", icon: BookOpen, label: "User Guide" },
   { to: "/shop", icon: ShoppingBag, label: "Merch Shop" },
+  { to: "/demo", icon: Gamepad2, label: "Simulator" },
   { to: "/how-to-play", icon: Sparkles, label: "How to Play" },
   { to: "/faq", icon: HelpCircle, label: "FAQ" },
   { to: "/pricing", icon: DollarSign, label: "Pricing" },
   { to: "/pocket/install", icon: Smartphone, label: "Paladin Pocket" },
+  { to: "/about", icon: ShieldCheck, label: "About · Veteran" },
   { to: "/portal", icon: LifeBuoy, label: "Portal & Support", hash: "support" as const },
 ] as const;
 
