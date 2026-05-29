@@ -29,11 +29,6 @@ function Portal() {
     if (!user) return;
     checkAdmin().then((r) => setIsAdmin(r.isAdmin)).catch(() => setIsAdmin(false));
     (async () => {
-
-
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
       const [{ data: p }, { data: s }, { data: r }] = await Promise.all([
         supabase.from("profiles").select("name, display_name, phone, referral_code").eq("id", user.id).maybeSingle(),
         supabase.from("subscriptions").select("tier, interval, status, current_period_end, activation_id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
@@ -43,7 +38,9 @@ function Portal() {
       setSub(s as Sub | null);
       setReferrals((r as Referral[] | null) ?? []);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
+
 
   const referralLink = profile?.referral_code
     ? `${window.location.origin}/login?mode=signup&ref=${profile.referral_code}`
