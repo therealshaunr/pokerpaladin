@@ -22,7 +22,8 @@ function UserGuide() {
       <SiteNav />
       <div className="relative z-10 mx-auto max-w-4xl px-4">
         <header className="py-12 text-center">
-          <p className="font-data text-xs uppercase tracking-[0.4em] text-gold">User guide</p>
+          <p className="font-data text-xs uppercase tracking-[0.4em] text-gold">User manual</p>
+
           <h1 className="mt-3 font-display text-4xl font-black md:text-5xl">
             From <span className="text-wizard">zero</span> to <span className="text-gold">summoned</span> in 2 minutes.
           </h1>
