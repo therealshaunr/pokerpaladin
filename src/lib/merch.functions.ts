@@ -52,7 +52,6 @@ export const createMerchCheckout = createServerFn({ method: "POST" })
 
       const session = await stripe.checkout.sessions.create({
         mode: "payment",
-        ui_mode: "hosted",
         success_url: data.successUrl,
         cancel_url: data.cancelUrl,
         automatic_tax: { enabled: true },
