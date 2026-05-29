@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteNav, SiteFooter } from "./index";
-import { CartProvider, useCart, fmtPrice, lineUnitPrice } from "@/lib/cart";
+import { useCart, fmtPrice, lineUnitPrice } from "@/lib/cart";
 import { productBySlug, CUSTOMIZATION_FEE, CUSTOMIZATION_DAYS, isOversize, OVERSIZE_UPCHARGE_PCT } from "@/lib/merch/catalog";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingBag, Check } from "lucide-react";
@@ -9,11 +9,7 @@ import { VeteranBadge } from "@/components/VeteranBadge";
 import { SizeSubscribePrompt } from "@/components/SizeSubscribePrompt";
 
 export const Route = createFileRoute("/shop/$slug")({
-  component: () => (
-    <CartProvider>
-      <ProductPage />
-    </CartProvider>
-  ),
+  component: ProductPage,
 });
 
 function ProductPage() {
