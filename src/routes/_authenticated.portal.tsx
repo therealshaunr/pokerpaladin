@@ -165,7 +165,8 @@ function Portal() {
         <section className="grid gap-4 md:grid-cols-3">
           {(() => {
             const activeStatuses = ["active", "trialing"];
-            const launchable = !!sub && activeStatuses.includes(sub.status) && !sub.suspended && !sub.frozen;
+            // Admins always get full Pro access
+            const launchable = isAdmin || (!!sub && activeStatuses.includes(sub.status) && !sub.suspended && !sub.frozen);
             const reason = !sub
               ? "no-plan"
               : sub.suspended
@@ -179,7 +180,7 @@ function Portal() {
               return (
                 <Link to="/app" className="group rounded-2xl border border-border bg-card p-6 transition hover:border-primary">
                   <Play className="h-6 w-6 text-matrix" />
-                  <div className="mt-3 font-display text-lg font-bold">Launch Paladin</div>
+                  <div className="mt-3 font-display text-lg font-bold">Launch Paladin {isAdmin && <span className="ml-1 text-[10px] font-data uppercase tracking-wider text-gold">· admin pro</span>}</div>
                   <p className="mt-1 text-xs text-muted-foreground">Open the live analyzer. Share your poker screen and get real-time guidance.</p>
                 </Link>
               );
@@ -187,7 +188,7 @@ function Portal() {
             return (
               <button
                 type="button"
-                onClick={() => setBlockedOpen(true)}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setBlockedOpen(true); }}
                 className="group relative cursor-not-allowed rounded-2xl border border-destructive/40 bg-black p-6 text-left transition hover:border-destructive"
                 aria-disabled="true"
               >
@@ -200,16 +201,16 @@ function Portal() {
               </button>
             );
           })()}
-          <div className="rounded-2xl border border-border bg-card p-6 opacity-60">
-            <Puzzle className="h-6 w-6" />
-            <div className="mt-3 font-display text-lg font-bold">Extension</div>
-            <p className="mt-1 text-xs text-muted-foreground">Browser companion — coming soon ($10/mo add-on).</p>
-          </div>
-          <div className="rounded-2xl border border-border bg-card p-6 opacity-60">
-            <Smartphone className="h-6 w-6" />
-            <div className="mt-3 font-display text-lg font-bold">Mobile view</div>
-            <p className="mt-1 text-xs text-muted-foreground">Pair your phone to mirror the recommendation — coming soon.</p>
-          </div>
+          <Link to="/coming-soon" className="group rounded-2xl border border-border bg-card p-6 transition hover:border-gold hover:bg-card/80">
+            <Puzzle className="h-6 w-6 text-gold" />
+            <div className="mt-3 font-display text-lg font-bold">Extension <span className="ml-1 text-[10px] font-data uppercase tracking-wider text-gold">soon</span></div>
+            <p className="mt-1 text-xs text-muted-foreground">Browser companion — the Paladin's apprentices are sharpening their blades.</p>
+          </Link>
+          <Link to="/coming-soon" className="group rounded-2xl border border-border bg-card p-6 transition hover:border-gold hover:bg-card/80">
+            <Smartphone className="h-6 w-6 text-gold" />
+            <div className="mt-3 font-display text-lg font-bold">Mobile view <span className="ml-1 text-[10px] font-data uppercase tracking-wider text-gold">soon</span></div>
+            <p className="mt-1 text-xs text-muted-foreground">Mirror Paladin to your phone. Being enchanted in the holy forge.</p>
+          </Link>
         </section>
 
         <SupportInbox />
