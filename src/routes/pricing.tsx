@@ -91,10 +91,10 @@ function Pricing() {
           <h2 className="font-display text-2xl font-black">Add-ons</h2>
           <p className="mt-1 text-sm text-muted-foreground">Toggle these on or off any time from your portal.</p>
           <div className="mt-5 grid gap-4 md:grid-cols-4">
-            <AddOnCard icon={Mic} name="Voice Companion" price="$10 / mo" priceId="addon_voice_monthly" desc="Whispered call/fold/raise on every street. Pro only — included in Pro by default." onBuy={buy} />
-            <AddOnCard icon={Puzzle} name="Focus Lens" price="$10 / mo" priceId="addon_focus_lens_monthly" desc="Capture a single window you choose — not your whole screen. Read-only pixel capture; never touches the betting site." onBuy={buy} />
-            <AddOnCard icon={Smartphone} name="Mobile Renderer" price="$8 / mo" priceId="addon_mobile_monthly" desc="Mirror the verdict to your phone via a secure pair code." onBuy={buy} />
-            <AddOnCard icon={Clock} name="10-Hour Pack" price="$14.99 once" priceId="topup_10h_onetime" desc="+10 Go-Live hours, valid 90 days. Stacks with Pro." onBuy={buy} />
+            <AddOnCard icon={Mic} name="Voice Companion" price="$10 / mo" priceId="voice_monthly" desc="Whispered call/fold/raise on every street. Pro only — included in Pro by default." onBuy={buy} />
+            <AddOnCard icon={Puzzle} name="Focus Lens" price="$10 / mo" priceId="lens_monthly" desc="Capture a single window you choose — not your whole screen. Read-only pixel capture; never touches the betting site." onBuy={buy} />
+            <AddOnCard icon={Smartphone} name="Mobile Renderer" price="$8 / mo" priceId="mobile_monthly" desc="Mirror the verdict to your phone via a secure pair code." onBuy={buy} />
+            <AddOnCard icon={Clock} name="10-Hour Pack" price="$14.99 once" priceId="topup_10h_once" desc="+10 Go-Live hours, valid 90 days. Stacks with Pro." onBuy={buy} />
           </div>
         </section>
 
