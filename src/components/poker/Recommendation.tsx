@@ -262,3 +262,14 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "wi
     </div>
   );
 }
+
+function RangePill({ label, v }: { label: string; v: number }) {
+  const pct = Math.round(v * 100);
+  const tone = v >= 0.55 ? "text-[oklch(0.72_0.18_145)]" : v >= 0.4 ? "text-gold" : "text-[oklch(0.62_0.21_27)]";
+  return (
+    <div className="rounded bg-background/50 p-1.5">
+      <div className={cn("font-display text-base font-black", tone)}>{pct}%</div>
+      <div className="font-data text-[9px] uppercase tracking-wider text-muted-foreground">{label}</div>
+    </div>
+  );
+}
