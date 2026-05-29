@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { SharedShare } from "./GoLivePanel";
 import { Button } from "@/components/ui/button";
-import { ScanEye, MonitorUp, X } from "lucide-react";
+import { ScanEye, MonitorUp, X, Volume2, VolumeX } from "lucide-react";
+import { isVoiceOn, setVoiceOn } from "@/lib/audio";
 
 const STANDARD_AUTOSCAN_MS = 8000;
 
@@ -12,6 +13,9 @@ interface Props {
 
 export function ScanPanel({ shared, tier }: Props) {
   const blocked = shared.paused || shared.standby;
+  const [voice, setVoice] = useState(false);
+  useEffect(() => { setVoice(isVoiceOn()); }, []);
+  const toggleVoice = () => { const next = !voice; setVoice(next); setVoiceOn(next); };
 
   useEffect(() => {
     if (tier !== "standard" || !shared.sharing || blocked) return;
@@ -25,7 +29,16 @@ export function ScanPanel({ shared, tier }: Props) {
       <div className="flex items-center justify-center gap-2 font-display text-base font-bold text-center">
         <ScanEye className="h-5 w-5 text-matrix" /> SCAN NOW · Analyze once
       </div>
-      <div className="mt-1 text-center">
+      <div className="mt-1 flex flex-wrap items-center justify-center gap-3 text-center">
+        <button
+          type="button"
+          onClick={toggleVoice}
+          className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-data text-[10px] uppercase tracking-wider transition ${voice ? "border-gold bg-gold/10 text-gold" : "border-border text-muted-foreground hover:border-gold/40"}`}
+          aria-label={voice ? "Mute Paladin voice" : "Enable Paladin voice"}
+        >
+          {voice ? <Volume2 className="h-3 w-3" /> : <VolumeX className="h-3 w-3" />}
+          Paladin voice · {voice ? "On" : "Off"}
+        </button>
         {tier === "standard" && shared.sharing && !blocked && (
           <span className="font-data text-xs uppercase tracking-wider text-matrix">auto · every 8s</span>
         )}

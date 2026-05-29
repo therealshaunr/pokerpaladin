@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { Calculator, ChevronDown, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { publishVerdict } from "@/lib/pocket-channel";
+import { playPaladinCue } from "@/lib/audio";
 
 
 const VERDICT_STYLE: Record<string, string> = {
@@ -117,6 +118,8 @@ export function Recommendation({ game }: { game: GameApi }) {
   // Broadcast to Paladin Pocket only when we have a real verdict on a live hand.
   useEffect(() => {
     if (!user || !decision || stale || !playable) return;
+    // Paladin Voice cue — silent unless the user toggled audio on.
+    playPaladinCue(decision.verdict);
     const street = !variant.community ? "—" : board.length === 0 ? "preflop" : board.length <= 3 ? "flop" : board.length === 4 ? "turn" : "river";
     publishVerdict(user.id, {
       verdict: decision.verdict,

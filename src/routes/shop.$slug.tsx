@@ -1,10 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteNav, SiteFooter } from "./index";
-import { CartProvider, useCart, fmtPrice } from "@/lib/cart";
-import { productBySlug, CUSTOMIZATION_FEE, CUSTOMIZATION_DAYS } from "@/lib/merch/catalog";
+import { CartProvider, useCart, fmtPrice, lineUnitPrice } from "@/lib/cart";
+import { productBySlug, CUSTOMIZATION_FEE, CUSTOMIZATION_DAYS, isOversize, OVERSIZE_UPCHARGE_PCT } from "@/lib/merch/catalog";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, ShoppingBag, Check } from "lucide-react";
+import { VeteranBadge } from "@/components/VeteranBadge";
+import { SizeSubscribePrompt } from "@/components/SizeSubscribePrompt";
 
 export const Route = createFileRoute("/shop/$slug")({
   component: () => (
@@ -39,12 +41,17 @@ function ProductPage() {
   }
 
   const customCost = customText.trim() ? CUSTOMIZATION_FEE : 0;
-  const unit = product.price + customCost;
+  const unit = lineUnitPrice({ slug: product.slug, size, customText: customText.trim() || undefined });
+  const upcharged = isOversize(size);
+
+  const [subscribeOpen, setSubscribeOpen] = useState(false);
+  const apparel = product.category === "apparel";
 
   const onAdd = () => {
     add({ slug: product.slug, size, fit, color, customText: customText.trim() || undefined, qty });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
+    if (apparel) setSubscribeOpen(true);
   };
 
   return (
@@ -83,7 +90,14 @@ function ProductPage() {
               <OptionRow label="Color" options={product.colors} value={color} onChange={setColor} />
             )}
             {product.sizes && (
-              <OptionRow label="Size" options={product.sizes} value={size} onChange={setSize} />
+              <>
+                <OptionRow label="Size" options={product.sizes} value={size} onChange={setSize} />
+                {upcharged && (
+                  <p className="mt-1 font-data text-[11px] text-gold">
+                    XL+ adds {OVERSIZE_UPCHARGE_PCT}% — applied at checkout.
+                  </p>
+                )}
+              </>
             )}
 
             {product.customizable && (
@@ -123,10 +137,21 @@ function ProductPage() {
             </Button>
 
             <p className="mt-5 text-[11px] text-muted-foreground">
-              Bundle 3+ items for <span className="text-gold font-semibold">10% off</span> · free shipping over <span className="text-gold font-semibold">$100</span>.
+              Bundle 3+ items for <span className="text-gold font-semibold">10% off</span> · USPS Standard <span className="text-gold font-semibold">free at $100+</span>.
             </p>
+
+            <div className="mt-4">
+              <VeteranBadge compact />
+            </div>
           </div>
         </div>
+
+        <SizeSubscribePrompt
+          open={subscribeOpen}
+          onClose={() => setSubscribeOpen(false)}
+          productName={product.name}
+          onChoose={() => { /* recurring stubbed until apparel-subscription prices wired */ }}
+        />
 
         <SiteFooter />
       </div>
