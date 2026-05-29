@@ -8,6 +8,7 @@ import {
   type VariantId,
   VARIANTS,
 } from "./types";
+import type { HandRecord } from "./leakFinder";
 
 export interface SeatPlayer {
   id: number;
@@ -112,6 +113,28 @@ export function useGame() {
   const [board, setBoard] = useState<Card[]>([]);
   const [pot, setPot] = useState(0);
   const [toCall, setToCall] = useState(0);
+
+  // Session hand history — used by Session Review / Leak Finder
+  const [handHistory, setHandHistory] = useState<HandRecord[]>([]);
+  const handHistoryRef = useRef<HandRecord[]>([]);
+  handHistoryRef.current = handHistory;
+  const lastRecordedKey = useRef<string>("");
+  const recordHand = useCallback((rec: HandRecord) => {
+    const sig = `${rec.street}|${rec.hero.map((c) => c.r + "" + c.s).join("")}|${rec.board.map((c) => c.r + "" + c.s).join("")}|${rec.verdict}`;
+    if (lastRecordedKey.current === sig) return;
+    lastRecordedKey.current = sig;
+    setHandHistory((h) => {
+      const next = [...h, rec];
+      if (next.length > 500) next.shift();
+      return next;
+    });
+  }, []);
+  const endSession = useCallback(() => {
+    const snap = handHistoryRef.current;
+    setHandHistory([]);
+    lastRecordedKey.current = "";
+    return snap;
+  }, []);
 
   // Opponent profiles (persistent)
   const [profiles, setProfiles] = useState<Record<string, OpponentProfile>>(() =>
@@ -378,6 +401,7 @@ export function useGame() {
     hero, setHero, board, setBoard, pot, setPot, toCall, setToCall,
     profiles, logAction, setNote, resetProfiles, newHand,
     syncFromVision, syncMeta, liveSeats, dealerSeat, heroToAct,
+    handHistory, recordHand, endSession,
   };
 }
 
