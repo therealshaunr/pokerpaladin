@@ -123,6 +123,9 @@ function Pocket() {
             </p>
           </>
         )}
+        <p className="text-center font-data text-[9px] uppercase tracking-[0.25em] text-muted-foreground/60">
+          Educational tool · Use only where permitted
+        </p>
       </div>
     </main>
   );

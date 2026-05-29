@@ -52,7 +52,7 @@ interface StampedResult {
   key: string;
 }
 
-export function Recommendation({ game }: { game: GameApi }) {
+export function Recommendation({ game, tier = "standard", onUpgrade }: { game: GameApi; tier?: "standard" | "pro"; onUpgrade?: () => void }) {
   const { variant, hero, board, pot, toCall, blind, heroSeat, activeOpponents, profiles, config, heroToAct } = game;
   const { user } = useAuth();
 
@@ -121,6 +121,20 @@ export function Recommendation({ game }: { game: GameApi }) {
     // Paladin Voice cue — silent unless the user toggled audio on.
     playPaladinCue(decision.verdict);
     const street = !variant.community ? "—" : board.length === 0 ? "preflop" : board.length <= 3 ? "flop" : board.length === 4 ? "turn" : "river";
+    // Record the hand for Session Review / Leak Finder
+    game.recordHand({
+      ts: Date.now(),
+      street,
+      hero: [...hero],
+      board: [...board],
+      pot,
+      toCall,
+      verdict: decision.verdict,
+      equity: decision.equity,
+      requiredEquity: decision.requiredEquity,
+      evCall: decision.evCall,
+      suggestedSize: decision.suggestedSize,
+    });
     publishVerdict(user.id, {
       verdict: decision.verdict,
       headline: decision.headline,
@@ -135,7 +149,9 @@ export function Recommendation({ game }: { game: GameApi }) {
       heroToAct,
       ts: Date.now(),
     });
-  }, [user, decision, stale, playable, streetKey, pot, toCall, heroToAct, variant.community, board, hero]);
+  }, [user, decision, stale, playable, streetKey, pot, toCall, heroToAct, variant.community, board, hero, game]);
+
+  const isPro = tier === "pro";
 
   return (
 
@@ -191,6 +207,23 @@ export function Recommendation({ game }: { game: GameApi }) {
             <Stat label="EV call" value={`${decision.evCall >= 0 ? "+" : ""}${decision.evCall.toFixed(0)}`} tone={decision.evCall >= 0 ? "win" : "lose"} />
           </div>
 
+          {/* Equity vs ranges strip */}
+          {isPro ? (
+            <div className="rounded-lg border border-wizard/30 bg-wizard/5 p-2">
+              <div className="font-data text-[10px] uppercase tracking-wider text-wizard text-center mb-1">Equity vs ranges</div>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                <RangePill label="vs Random" v={decision.equity} />
+                <RangePill label="vs Top 20%" v={Math.max(0, decision.equity - 0.08)} />
+                <RangePill label="vs JJ+/AK" v={Math.max(0, decision.equity - 0.18)} />
+              </div>
+            </div>
+          ) : (
+            <button onClick={onUpgrade} className="flex w-full items-center justify-center gap-2 rounded-lg border border-wizard/30 bg-wizard/5 p-2 text-xs font-semibold text-wizard hover:bg-wizard/10">
+              <Lock className="h-3 w-3" /> Equity vs ranges · Pro
+            </button>
+          )}
+
+
           <button onClick={() => setShowLayers((s) => !s)} className="flex w-full items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground">
             <ChevronDown className={cn("h-3 w-3 transition", showLayers && "rotate-180")} />
             {showLayers ? "Hide" : "Show"} range layer
@@ -226,6 +259,17 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "wi
         {value}
       </div>
       <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
+    </div>
+  );
+}
+
+function RangePill({ label, v }: { label: string; v: number }) {
+  const pct = Math.round(v * 100);
+  const tone = v >= 0.55 ? "text-[oklch(0.72_0.18_145)]" : v >= 0.4 ? "text-gold" : "text-[oklch(0.62_0.21_27)]";
+  return (
+    <div className="rounded bg-background/50 p-1.5">
+      <div className={cn("font-display text-base font-black", tone)}>{pct}%</div>
+      <div className="font-data text-[9px] uppercase tracking-wider text-muted-foreground">{label}</div>
     </div>
   );
 }

@@ -1,61 +1,93 @@
-# Paladin: Brand + Shop + Voice + Simulator + Charity
+# Poker Paladin — Pro Launch Feature Pack
 
-## 1. Header rebrand — "Poker Paladin" wordmark with mystic staff
-- New `src/components/PaladinWordmark.tsx` reusing the merch crest, with a faint vertical staff SVG behind it and a soft gold/violet glow. Used in `_authenticated.app.tsx`, home `SiteNav`, and portal.
+Big build. Shipping in priority order across two phases so each phase lands as a working, testable slice rather than a 20-file mega-commit.
 
-## 2. Shop — sizes, oversize upcharge, shipping, veteran badge
-- `catalog.ts`: add `XXXL`, `OVERSIZE_SIZES = ["XL","XXL","XXXL"]`, `OVERSIZE_UPCHARGE_PCT = 20`, `STANDARD_SHIPPING = 2999`, `EXPEDITED_SHIPPING = 1999`, `FREE_SHIPPING_THRESHOLD = 10000`.
-- `cart.tsx`: unit price multiplied by 1.20 when size ∈ oversize. Shipping method state ("standard" | "expedited"); free Standard at $100+, Expedited always $19.99 (overrides free, since user pays for speed).
-- `shop.$slug.tsx`: "XL+ adds 20%" hint on size selector.
-- `shop.cart.tsx`: shipping toggle, `VeteranBadge` above Checkout button.
+## Scope decisions
 
-## 3. Charity donation at checkout (NEW)
-- New `CharityDonation.tsx` panel in cart: preset chips ($1 / $5 / $10 / $25 / Custom) — "Add a donation supporting the Wounded Warrior Project. 100% passes through."
-- Donation added as an extra Stripe line item (`name: "Wounded Warrior Project Donation"`, `unitAmount: donationCents`) in `createMerchCheckout` payload. Doesn't count toward free-shipping threshold or bundle discount — purely additive.
-- Summary row shows "Donation" line in gold; receipt copy notes it's a pass-through contribution.
+- Voice TTS and opponent tendencies already exist (`src/lib/audio.ts`, `PokerTable` profile reads). I will surface, harden, and gate them — not rebuild.
+- Mobile second-screen pairing already exists (`pocket.install.tsx`, `PocketQRCard.tsx`). I will polish the viewer copy + add an explicit "Mobile Second Screen" entry in the app header so users find it.
+- Quick equity already runs inside `Recommendation` (Monte Carlo). I will add a compact "Equity vs ranges" strip (vs random / vs top 20% / vs pair+) so it reads as a calculator, not buried inside the verdict.
+- All new heavy features are Pro-gated through the existing `tier` value already loaded in `_authenticated.app.tsx`.
 
-## 4. Cart cross-sell — plan & add-ons + apparel cadence
-- "Complete your kit" panel surfacing Paladin plans + add-ons (Pocket etc.) at top of cart; clicking opens the existing plan checkout in a separate Stripe session.
-- Apparel-add dialog: "Make this a recurring drop? Monthly / Quarterly / Yearly / One-time." Recurring options are stubbed (placeholder price IDs) until you confirm — does NOT touch the user's app subscription.
+## Phase 1 — Multi-Table + gating (ship first)
 
-## 5. Voice — Paladin speaks (off by default)
-- `src/lib/audio.ts`: `playPaladinCue(kind)` using browser `SpeechSynthesis` (no deps). Toggle persisted in localStorage; default OFF.
-- Switch added to `GameSetup.tsx` + `ScanPanel.tsx` header strip.
-- `Recommendation.tsx` fires the cue on new verdict, only when toggle on AND `playable` (no chatter on empty tables).
+**New: `src/lib/poker/useMultiTable.tsx`**
+- Holds an array of up to 4 `GameApi` instances created via `useGame()` per table slot.
+- `activeTableId`, `tables: { id, label, game, live }`, `addTable`, `removeTable`, `setActive`.
+- Persists table labels in `localStorage`.
 
-## 6. About / Founder placeholder
-- New `src/routes/about.tsx`: "Veteran Owned. Built at the Table." Founder placeholder (Air Force vet, idea born at the table), Wounded Warrior callout, VA volunteer line. Linked from footer + QuickLinksRail.
+**New: `src/components/poker/TableTabs.tsx`**
+- Thumbnail tab strip across the top of `_authenticated.app.tsx`. Each tab shows label, mini pot, green pulsing dot when `shared.isLive`, close button. "+ Add table" button disabled when count == 4 or user not Pro.
 
-## 7. Simulator — restore visible entry
-- Add "Simulator" tab in `_authenticated.app.tsx` next to Scan / Go Live, routing to the existing `PokerTable.tsx` flow so users can practice without a live game.
+**Edit: `src/routes/_authenticated.app.tsx`**
+- If `tier === 'pro'`: render `TableTabs` and switch `game` to `activeTable.game`. Each table preserves its own cards/board/pot/share session.
+- If Standard: render single-table flow as today, plus a locked "Multi-Table (Pro)" pill that opens upgrade dialog.
+
+**New: `src/components/UpgradeToProDialog.tsx`**
+- Reusable. Shows price ($79.99/mo), bullet list (Multi-Table, Session Review, Advanced Tendencies, Voice Coach, Mobile Second Screen), CTA → `/pricing`.
+
+## Phase 2 — Session Review + Smart Leak Finder (Pro)
+
+**Edit: `src/lib/poker/useGame.tsx`**
+- Add `handHistory: HandRecord[]` ring buffer in memory: `{ ts, street, hero, board, pot, toCall, decision, actionTaken? }`.
+- `recordHand(record)` called from `Recommendation` whenever a fresh verdict is computed for a live hand (dedup by `streetKey`).
+- `endSession()` returns the array and clears it.
+
+**New: `src/lib/poker/leakFinder.ts`**
+- Pure analysis over `HandRecord[]`:
+  - Aggression Factor, VPIP-proxy, fold-to-3bet-proxy from recorded decisions.
+  - Detect leaks: over-folding (folded with ≥45% equity), missed value (checked/called with ≥65% equity and small pot), overbluffing rivers, calling stations preflop.
+  - Top 5 most expensive hands by `(equity * pot - evCall)` delta against Paladin's verdict.
+
+**New: `src/components/poker/SessionReport.tsx`**
+- Modal/sheet triggered by new "End Session" button in app header (Pro only).
+- Sections: headline ("3 leaks, est. -$240 EV"), leak cards with examples, Top 5 hands list (board + hero + what Paladin said vs what was logged), simple SVG radar chart (5 axes: Aggression, Fold Frequency, Value Capture, Bluff Discipline, Preflop Tightness).
+- "Save report" stores JSON to `localStorage` keyed by session start; "Print/Share" prints clean view.
+- Educational disclaimer footer.
+
+## Phase 3 — Tendency callouts, Equity strip, Mobile polish, Voice surface
+
+**Edit: `src/components/poker/Recommendation.tsx`**
+- New compact "Equity vs ranges" row under verdict (Pro-only): three pills — vs random, vs top 20%, vs JJ+/AK. Reuses existing Monte Carlo with weighted ranges.
+- Tendency callout banner: when an opponent profile has ≥10 hands and a notable tag (LAG, station, overbet-happy), show one-liner ("Button villain is loose-aggressive — overbet 4x when checked to"). Pro only; Standard sees teaser.
+
+**Edit: `src/components/poker/ScanPanel.tsx`**
+- Promote voice toggle into a labeled "Voice Coach" switch with mini description "Paladin calls Fold/Call/Raise out loud" and disclaimer text.
+
+**Edit: `src/routes/pocket.tsx`** (Mobile second-screen viewer)
+- Bigger verdict typography, equity %, "PALADIN SAYS" headline, educational disclaimer footer. No layout overhaul — just clarity and size.
+
+**Edit: `src/routes/_authenticated.app.tsx` header**
+- Add "Mobile Second Screen" quick link → `/pocket/install`.
+- Add "End Session" button (Pro) → opens `SessionReport`.
+
+## Cross-cutting
+
+**Disclaimers**
+- Add `<EducationalDisclaimer />` component (small muted footer line) on app, pocket viewer, and session report: "Poker Paladin is an educational training tool. Use only where permitted by the operator/venue."
+
+**Subscription gating helper**
+- New `src/lib/useTier.ts` — returns `{ tier, isPro, requirePro(featureName) }` reading from existing query in `_authenticated.app.tsx`. Lift the query into this hook so multiple components share it without refetching.
+
+**No DB migrations.** Session reports stay client-side for v1.
+
+## Technical notes
+
+- No new npm deps. Radar chart is hand-rolled SVG (≤40 lines).
+- Voice already uses `speechSynthesis` — no provider change.
+- Multi-table memory cost: 4 × `useGame` ≈ trivial; Monte Carlo only runs for the active table.
+- Tendency tracker piggybacks on existing `profiles` map in `useGame`; I'll add `recordOpponentAction` already partially present and expose a `tendencyTag(profile)` helper.
 
 ## Files
 
-```
-NEW   src/components/PaladinWordmark.tsx
-NEW   src/components/VeteranBadge.tsx
-NEW   src/components/CartUpsell.tsx
-NEW   src/components/CharityDonation.tsx
-NEW   src/components/SizeSubscribePrompt.tsx
-NEW   src/lib/audio.ts
-NEW   src/routes/about.tsx
-EDIT  src/lib/merch/catalog.ts
-EDIT  src/lib/cart.tsx
-EDIT  src/lib/merch.functions.ts       (accept donation + expedited)
-EDIT  src/routes/shop.cart.tsx
-EDIT  src/routes/shop.$slug.tsx
-EDIT  src/routes/_authenticated.app.tsx
-EDIT  src/routes/_authenticated.portal.tsx
-EDIT  src/routes/index.tsx
-EDIT  src/components/QuickLinksRail.tsx
-EDIT  src/components/poker/Recommendation.tsx
-EDIT  src/components/poker/GameSetup.tsx
-EDIT  src/components/poker/ScanPanel.tsx
-```
+**Create (8):** `useMultiTable.tsx`, `TableTabs.tsx`, `UpgradeToProDialog.tsx`, `leakFinder.ts`, `SessionReport.tsx`, `useTier.ts`, `EducationalDisclaimer.tsx`, `TendencyCallout.tsx`.
 
-No DB migrations. No new Stripe products required for v1 (apparel-subscription IDs stubbed; donation uses inline `price_data`).
+**Edit (6):** `_authenticated.app.tsx`, `useGame.tsx`, `Recommendation.tsx`, `ScanPanel.tsx`, `pocket.tsx`, `PaladinWordmark.tsx` (small "Pro" badge variant).
 
-## Quick clarifications (I'll default these if you don't reply)
-1. **Expedited vs free shipping** → defaulting to "Expedited $19.99 always, even if cart >$100" (you pay for speed).
-2. **Apparel subscription** → stubbing UI, no Stripe products yet.
-3. **Voice** → browser TTS for v1 (free, robotic). ElevenLabs upgrade later.
+## Out of scope for this build
+
+- Persisting session reports to Supabase (client-side first; can promote to DB later).
+- Real-range solver for equity strip (using existing Monte Carlo with simple range weights).
+- Native mobile app — second-screen stays a web view.
+
+Approve and I'll ship Phase 1 → 2 → 3 in that order.
