@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Check, Mic, Puzzle, Smartphone, Clock, Bitcoin } from "lucide-react";
@@ -9,6 +9,9 @@ import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 export const Route = createFileRoute("/pricing")({
+  validateSearch: (s: Record<string, unknown>) => ({
+    buy: typeof s.buy === "string" ? s.buy : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Pricing — Poker Paladin" },
@@ -19,6 +22,19 @@ export const Route = createFileRoute("/pricing")({
   }),
   component: Pricing,
 });
+
+function Pricing() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { buy: buyParam } = Route.useSearch();
+  const [activePrice, setActivePrice] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user && buyParam) {
+      setActivePrice(buyParam);
+      navigate({ to: "/pricing", search: {}, replace: true });
+    }
+  }, [user, buyParam, navigate]);
 
 function Pricing() {
   const { user } = useAuth();
