@@ -24,11 +24,7 @@ import { CartUpsell } from "@/components/CartUpsell";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/shop/cart")({
-  component: () => (
-    <CartProvider>
-      <CartPage />
-    </CartProvider>
-  ),
+  component: CartPage,
 });
 
 function CartPage() {
