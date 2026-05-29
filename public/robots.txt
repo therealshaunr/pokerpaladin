@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /app
+Disallow: /portal
+Disallow: /admin
+Disallow: /checkout
+Disallow: /api/
+
+Sitemap: https://pokerpaladin.lovable.app/sitemap.xml
