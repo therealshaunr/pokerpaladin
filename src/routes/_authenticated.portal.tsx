@@ -215,6 +215,28 @@ function Portal() {
         <SupportInbox />
 
       </div>
+
+      {blockedOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setBlockedOpen(false)}>
+          <div className="w-full max-w-md rounded-2xl border border-destructive/50 bg-card p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="font-display text-xl font-black uppercase tracking-wide text-destructive">Paladin is locked</div>
+            <p className="mt-3 text-sm text-foreground/90">
+              {!sub
+                ? "You don't have an active Paladin plan yet. Pick a tier to start playing with Paladin at your side."
+                : sub.suspended
+                ? "Your account has been suspended. Reach out to support or renew your plan to get back in the game."
+                : sub.frozen
+                ? "Your account is temporarily frozen. Contact support or update your billing to unlock Paladin."
+                : `Your subscription is currently "${sub.status}". Reactivate or pick a new plan to launch Paladin.`}
+            </p>
+            <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+              <Button variant="ghost" size="sm" onClick={() => setBlockedOpen(false)}>Close</Button>
+              <Link to="/pricing"><Button size="sm" className="w-full sm:w-auto">Go to Pricing</Button></Link>
+              <Link to="/portal" hash="support"><Button variant="secondary" size="sm" onClick={() => setBlockedOpen(false)} className="w-full sm:w-auto">Contact support</Button></Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
