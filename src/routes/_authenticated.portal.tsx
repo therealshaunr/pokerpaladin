@@ -178,6 +178,9 @@ function Portal() {
             <p className="mt-1 text-xs text-muted-foreground">Pair your phone to mirror the recommendation — coming soon.</p>
           </div>
         </section>
+
+        <SupportInbox />
+
       </div>
     </div>
   );
