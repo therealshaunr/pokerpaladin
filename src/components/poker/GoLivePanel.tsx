@@ -17,7 +17,7 @@ interface Props {
 
 // Hook providing a single shared screen-share session for GO LIVE + SCAN panels.
 export interface SharedShare {
-  videoRef: React.RefObject<HTMLVideoElement>;
+  videoRef: React.RefObject<HTMLVideoElement | null>;
   sharing: boolean;
   startShare: () => Promise<void>;
   stopShare: () => void;
