@@ -130,6 +130,9 @@ export function Recommendation({ game }: { game: GameApi }) {
     });
   }, [user, decision, stale, streetKey, pot, toCall, heroToAct, variant.community, board, hero]);
 
+  return (
+
+
 
     <div className="rounded-xl border border-border bg-card p-4">
       {/* WHAT TO DO — big red call-out, front and center */}
