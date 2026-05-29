@@ -9,34 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as PricingRouteImport } from './routes/pricing'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as DisclaimerRouteImport } from './routes/disclaimer'
-import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as DemoRouteImport } from './routes/demo'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedPortalRouteImport } from './routes/_authenticated.portal'
 import { Route as AuthenticatedAppRouteImport } from './routes/_authenticated.app'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -49,14 +45,18 @@ const DisclaimerRoute = DisclaimerRouteImport.update({
   path: '/disclaimer',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RefundPolicyRoute = RefundPolicyRouteImport.update({
-  id: '/refund-policy',
-  path: '/refund-policy',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DemoRoute = DemoRouteImport.update({
   id: '/demo',
   path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedPortalRoute = AuthenticatedPortalRouteImport.update({
@@ -72,23 +72,23 @@ const AuthenticatedAppRoute = AuthenticatedAppRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/demo': typeof DemoRoute
+  '/disclaimer': typeof DisclaimerRoute
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
-  '/faq': typeof FaqRoute
-  '/disclaimer': typeof DisclaimerRoute
   '/refund-policy': typeof RefundPolicyRoute
-  '/demo': typeof DemoRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/demo': typeof DemoRoute
+  '/disclaimer': typeof DisclaimerRoute
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
-  '/faq': typeof FaqRoute
-  '/disclaimer': typeof DisclaimerRoute
   '/refund-policy': typeof RefundPolicyRoute
-  '/demo': typeof DemoRoute
   '/app': typeof AuthenticatedAppRoute
   '/portal': typeof AuthenticatedPortalRoute
 }
@@ -96,30 +96,48 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/demo': typeof DemoRoute
+  '/disclaimer': typeof DisclaimerRoute
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
   '/pricing': typeof PricingRoute
-  '/faq': typeof FaqRoute
-  '/disclaimer': typeof DisclaimerRoute
   '/refund-policy': typeof RefundPolicyRoute
-  '/demo': typeof DemoRoute
   '/_authenticated/app': typeof AuthenticatedAppRoute
   '/_authenticated/portal': typeof AuthenticatedPortalRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/pricing' | '/faq' | '/disclaimer' | '/refund-policy' | '/demo' | '/app' | '/portal'
+  fullPaths:
+    | '/'
+    | '/demo'
+    | '/disclaimer'
+    | '/faq'
+    | '/login'
+    | '/pricing'
+    | '/refund-policy'
+    | '/app'
+    | '/portal'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/pricing' | '/faq' | '/disclaimer' | '/refund-policy' | '/demo' | '/app' | '/portal'
+  to:
+    | '/'
+    | '/demo'
+    | '/disclaimer'
+    | '/faq'
+    | '/login'
+    | '/pricing'
+    | '/refund-policy'
+    | '/app'
+    | '/portal'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/demo'
+    | '/disclaimer'
+    | '/faq'
     | '/login'
     | '/pricing'
-    | '/faq'
-    | '/disclaimer'
     | '/refund-policy'
-    | '/demo'
     | '/_authenticated/app'
     | '/_authenticated/portal'
   fileRoutesById: FileRoutesById
@@ -127,35 +145,21 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  DemoRoute: typeof DemoRoute
+  DisclaimerRoute: typeof DisclaimerRoute
+  FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
   PricingRoute: typeof PricingRoute
-  FaqRoute: typeof FaqRoute
-  DisclaimerRoute: typeof DisclaimerRoute
   RefundPolicyRoute: typeof RefundPolicyRoute
-  DemoRoute: typeof DemoRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -163,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -179,18 +190,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DisclaimerRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/refund-policy': {
-      id: '/refund-policy'
-      path: '/refund-policy'
-      fullPath: '/refund-policy'
-      preLoaderRoute: typeof RefundPolicyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/demo': {
       id: '/demo'
       path: '/demo'
       fullPath: '/demo'
       preLoaderRoute: typeof DemoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/portal': {
@@ -227,12 +245,12 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  DemoRoute: DemoRoute,
+  DisclaimerRoute: DisclaimerRoute,
+  FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
   PricingRoute: PricingRoute,
-  FaqRoute: FaqRoute,
-  DisclaimerRoute: DisclaimerRoute,
   RefundPolicyRoute: RefundPolicyRoute,
-  DemoRoute: DemoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
