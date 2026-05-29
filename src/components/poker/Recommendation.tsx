@@ -139,10 +139,10 @@ export function Recommendation({ game }: { game: GameApi }) {
 
 
     <div className="rounded-xl border border-border bg-card p-5">
-      {/* WHAT TO DO — big call-out, left-aligned */}
+      {/* WHAT TO DO — big call-out, centered */}
       <div
         className={cn(
-          "mt-1 rounded-xl border-2 p-4 text-left transition",
+          "mt-1 rounded-xl border-2 p-4 text-center transition",
           showVerdict
             ? "border-[oklch(0.58_0.24_27)] bg-[oklch(0.2_0.08_27)]"
             : "border-border bg-secondary/20",
@@ -151,7 +151,7 @@ export function Recommendation({ game }: { game: GameApi }) {
       >
         <div className="font-data text-xs font-bold uppercase tracking-[0.3em] text-[oklch(0.7_0.2_27)]">
           {frozen ? (
-            <span className="inline-flex items-center gap-1"><Lock className="h-3 w-3" /> Locked · waiting for your turn</span>
+            <span className="inline-flex items-center justify-center gap-1"><Lock className="h-3 w-3" /> Locked · waiting for your turn</span>
           ) : (
             "Paladin says"
           )}
