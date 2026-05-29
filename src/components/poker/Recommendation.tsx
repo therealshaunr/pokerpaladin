@@ -136,11 +136,10 @@ export function Recommendation({ game }: { game: GameApi }) {
         )}
       </div>
 
-      <Button onClick={run} disabled={!ready || busy} className="mt-3 w-full gap-2">
+      <Button onClick={run} disabled={!ready || busy} className="mt-3 w-full gap-2 font-bold">
         <Calculator className="h-4 w-4" />
-        {busy ? "Crunching…" : "Best play"}
+        {busy ? "Crunching…" : "PALADIN SAYS"}
       </Button>
-      {!ready && <p className="mt-2 text-center text-xs text-muted-foreground">Add your hole cards first.</p>}
 
       {showVerdict && decision && (
         <div className="mt-3 space-y-3">

@@ -3,31 +3,47 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
-import { Spade, LogOut, Play, Puzzle, Smartphone } from "lucide-react";
+import { Spade, LogOut, Play, Puzzle, Smartphone, Gift, Copy, Check, Users } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/portal")({
   component: Portal,
 });
 
-interface Profile { name: string | null; display_name: string | null; phone: string | null }
+interface Profile { name: string | null; display_name: string | null; phone: string | null; referral_code: string | null }
 interface Sub { tier: string; interval: string; status: string; current_period_end: string | null; activation_id: string }
+interface Referral { id: string; referee_email: string; status: string; created_at: string; qualified_at: string | null; rewarded_at: string | null }
 
 function Portal() {
   const { user, signOut } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [sub, setSub] = useState<Sub | null>(null);
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!user) return;
     (async () => {
-      const [{ data: p }, { data: s }] = await Promise.all([
-        supabase.from("profiles").select("name, display_name, phone").eq("id", user.id).maybeSingle(),
-        supabase.from("subscriptions").select("tier, interval, status, current_period_end, activation_id").eq("user_id", user.id).maybeSingle(),
+      const [{ data: p }, { data: s }, { data: r }] = await Promise.all([
+        supabase.from("profiles").select("name, display_name, phone, referral_code").eq("id", user.id).maybeSingle(),
+        supabase.from("subscriptions").select("tier, interval, status, current_period_end, activation_id").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+        supabase.from("referrals").select("id, referee_email, status, created_at, qualified_at, rewarded_at").eq("referrer_id", user.id).order("created_at", { ascending: false }),
       ]);
       setProfile(p as Profile | null);
       setSub(s as Sub | null);
+      setReferrals((r as Referral[] | null) ?? []);
     })();
   }, [user]);
+
+  const referralLink = profile?.referral_code
+    ? `${window.location.origin}/login?mode=signup&ref=${profile.referral_code}`
+    : "";
+
+  const copyLink = async () => {
+    if (!referralLink) return;
+    await navigator.clipboard.writeText(referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
     <div className="matrix-bg min-h-dvh px-4 py-8">
@@ -72,6 +88,65 @@ function Portal() {
           </div>
         </section>
 
+        {/* Referral program */}
+        <section className="rounded-2xl border border-gold/50 bg-gold/5 p-6">
+          <div className="flex items-center gap-2">
+            <Gift className="h-5 w-5 text-gold" />
+            <h2 className="font-display text-lg font-black uppercase tracking-wide">Refer a friend · earn $25</h2>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Share your unique link. When a friend signs up with it and pays for at least one month of Paladin, you get a <span className="text-gold font-semibold">$25 digital Amazon gift card</span> — keep it, donate it, your call.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <div className="flex-1 rounded-lg border border-border bg-background/40 px-3 py-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Your referral code</div>
+              <div className="font-data text-lg font-bold tracking-wider text-gold">{profile?.referral_code ?? "—"}</div>
+            </div>
+            <div className="flex-[2] rounded-lg border border-border bg-background/40 px-3 py-2">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Shareable link</div>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 truncate font-data text-xs text-foreground/80">{referralLink || "—"}</div>
+                <button
+                  onClick={copyLink}
+                  disabled={!referralLink}
+                  className="inline-flex items-center gap-1 rounded-md bg-gold px-2 py-1 text-[11px] font-bold text-black hover:opacity-90 disabled:opacity-40"
+                >
+                  {copied ? <><Check className="h-3 w-3" /> Copied</> : <><Copy className="h-3 w-3" /> Copy</>}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <div className="mb-2 flex items-center gap-2 text-[11px] uppercase tracking-wider text-muted-foreground">
+              <Users className="h-3.5 w-3.5" /> Active referrals ({referrals.length})
+            </div>
+            {referrals.length === 0 ? (
+              <p className="rounded-lg border border-dashed border-border bg-card/40 px-3 py-4 text-center text-xs text-muted-foreground">
+                No referrals yet. Share your link to start earning.
+              </p>
+            ) : (
+              <div className="space-y-1.5">
+                {referrals.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between rounded-lg border border-border bg-card/40 px-3 py-2">
+                    <div>
+                      <div className="font-data text-sm text-foreground">{r.referee_email}</div>
+                      <div className="font-data text-[10px] text-muted-foreground">
+                        Signed up {new Date(r.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <StatusBadge status={r.status} />
+                  </div>
+                ))}
+              </div>
+            )}
+            <p className="mt-3 text-[10px] italic text-muted-foreground">
+              Status updates after your friend's first paid month. Rewards are issued manually within 7 days — keep an eye on the email tied to your account.
+            </p>
+          </div>
+        </section>
+
         <section className="grid gap-4 md:grid-cols-3">
           <Link to="/app" className="group rounded-2xl border border-border bg-card p-6 transition hover:border-primary">
             <Play className="h-6 w-6 text-matrix" />
@@ -89,11 +164,20 @@ function Portal() {
             <p className="mt-1 text-xs text-muted-foreground">Pair your phone to mirror the recommendation — coming soon.</p>
           </div>
         </section>
-
-        <p className="text-center font-data text-[11px] text-muted-foreground">
-          Billing & subscription management coming in the next update.
-        </p>
       </div>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const map: Record<string, string> = {
+    pending: "bg-secondary text-muted-foreground",
+    qualified: "bg-gold/20 text-gold border border-gold/40",
+    rewarded: "bg-matrix/20 text-matrix border border-matrix/40",
+  };
+  return (
+    <span className={`rounded-md px-2 py-0.5 font-data text-[10px] font-bold uppercase tracking-wider ${map[status] ?? map.pending}`}>
+      {status}
+    </span>
   );
 }

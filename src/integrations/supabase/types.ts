@@ -238,9 +238,12 @@ export type Database = {
         Row: {
           created_at: string
           display_name: string | null
+          how_heard: string | null
           id: string
           name: string | null
           phone: string | null
+          referral_code: string | null
+          referred_by_code: string | null
           shipping_city: string | null
           shipping_country: string | null
           shipping_line1: string | null
@@ -252,9 +255,12 @@ export type Database = {
         Insert: {
           created_at?: string
           display_name?: string | null
+          how_heard?: string | null
           id: string
           name?: string | null
           phone?: string | null
+          referral_code?: string | null
+          referred_by_code?: string | null
           shipping_city?: string | null
           shipping_country?: string | null
           shipping_line1?: string | null
@@ -266,15 +272,60 @@ export type Database = {
         Update: {
           created_at?: string
           display_name?: string | null
+          how_heard?: string | null
           id?: string
           name?: string | null
           phone?: string | null
+          referral_code?: string | null
+          referred_by_code?: string | null
           shipping_city?: string | null
           shipping_country?: string | null
           shipping_line1?: string | null
           shipping_line2?: string | null
           shipping_postal?: string | null
           shipping_state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          qualified_at: string | null
+          referee_email: string
+          referee_id: string
+          referral_code: string
+          referrer_id: string
+          reward_notes: string | null
+          rewarded_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          qualified_at?: string | null
+          referee_email: string
+          referee_id: string
+          referral_code: string
+          referrer_id: string
+          reward_notes?: string | null
+          rewarded_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          qualified_at?: string | null
+          referee_email?: string
+          referee_id?: string
+          referral_code?: string
+          referrer_id?: string
+          reward_notes?: string | null
+          rewarded_at?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -517,6 +568,7 @@ export type Database = {
         Args: { _sku: string; _tier: string }
         Returns: string
       }
+      generate_referral_code: { Args: never; Returns: string }
       get_go_live_usage: {
         Args: { _user_id: string }
         Returns: {

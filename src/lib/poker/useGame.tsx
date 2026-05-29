@@ -30,7 +30,7 @@ const PROFILES_KEY = "poker.profiles.v1";
 
 export const DEFAULT_CONFIG: GameConfig = {
   variantId: "nlhe",
-  startingStack: 1500,
+  startingStack: 0,
   numPlayers: 9,
   levelMinutes: 6,
   anteFromLevel: 8,
