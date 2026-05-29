@@ -194,63 +194,50 @@ export function GoLivePanel({ tier, shared }: Props) {
       isPro ? "border-wizard/60 wizard-gradient/10 shadow-[0_0_40px_oklch(0.55_0.22_295/0.25)]" : "border-gold/50 bg-gold/5"
     )}>
       <div className="pointer-events-none absolute inset-0 opacity-30" style={{ background: "radial-gradient(circle at top right, oklch(0.7 0.2 295 / 0.35), transparent 60%)" }} />
-      <div className="relative">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Zap className={cn("h-6 w-6", isPro ? "text-wizard" : "text-gold")} />
-            <div>
-              <div className="font-display text-xl font-black uppercase tracking-wide">GO LIVE</div>
-              <div className="font-data text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                {isPro ? "Pro · real-time render" : "Pro tier required"}
-              </div>
+      <div className="relative text-center">
+        <div className="flex items-center justify-center gap-2">
+          <Zap className={cn("h-6 w-6", isPro ? "text-wizard" : "text-gold")} />
+          <div>
+            <div className="font-display text-xl font-black uppercase tracking-wide">GO LIVE</div>
+            <div className="font-data text-xs uppercase tracking-[0.3em] text-muted-foreground">
+              {isPro ? "Pro · real-time render" : "Pro tier required"}
             </div>
           </div>
-          {shared.sharing && (
-            <button onClick={shared.stopShare} className="text-muted-foreground hover:text-foreground" aria-label="Disconnect">
-              <X className="h-4 w-4" />
-            </button>
-          )}
         </div>
 
-        <video
-          ref={shared.videoRef}
-          muted
-          playsInline
-          className="mt-3 aspect-video w-full rounded-md border border-border bg-black/40 object-contain"
-          style={{ display: shared.sharing ? "block" : "none" }}
-        />
-
         {!shared.sharing ? (
-          <Button onClick={shared.startShare} className="mt-3 w-full gap-2 font-bold text-base">
-            <MonitorUp className="h-5 w-5" /> Connect screen
-          </Button>
+          <div className="mt-4 rounded-lg border border-dashed border-wizard/40 bg-wizard/5 p-4 text-sm text-muted-foreground">
+            Connect your screen in the <span className="font-bold text-matrix">SCAN NOW</span> panel — one share powers both.
+          </div>
         ) : (
           <>
             {shared.standby ? (
-              <div className="mt-3 rounded-lg border-2 border-dashed border-gold/40 bg-gold/5 p-4 text-center">
+              <div className="mt-4 rounded-lg border-2 border-dashed border-gold/40 bg-gold/5 p-4 text-center">
                 <Moon className="mx-auto h-6 w-6 text-gold" />
                 <div className="mt-2 font-display text-lg font-black uppercase">Standby</div>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Nobody at the table for a few scans — Paladin's resting. Hit resume when you sit back down.
                 </p>
-                <Button onClick={shared.resumeFromStandby} className="mt-3 w-full gap-2 font-bold">
+                <Button onClick={shared.resumeFromStandby} className="mt-3 w-full gap-2 font-bold justify-center">
                   <Play className="h-4 w-4" /> Resume scanning
                 </Button>
               </div>
             ) : isPro ? (
-              <div className="mt-3 space-y-2">
+              <div className="mt-4 space-y-2">
                 <button
                   onClick={() => setLive((v) => !v)}
                   disabled={shared.paused}
                   className={cn(
-                    "flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-lg font-black uppercase tracking-wider transition",
+                    "flex w-full items-center justify-center gap-2 rounded-lg px-3 py-4 text-xl font-black uppercase tracking-wider transition",
                     shared.paused
                       ? "bg-secondary text-muted-foreground"
-                      : live ? "bg-wizard text-white glow-wizard" : "wizard-gradient text-white hover:opacity-90"
+                      : live
+                        ? "bg-wizard text-white glow-wizard animate-pulse"
+                        : "wizard-gradient text-white hover:opacity-90 animate-pulse shadow-[0_0_30px_oklch(0.55_0.22_295/0.7)] ring-2 ring-wizard/60"
                   )}
                 >
-                  <Radio className={cn("h-5 w-5", live && !shared.paused && "live-dot rounded-full")} />
-                  {shared.paused ? "PAUSED" : live ? "LIVE — watching every 2.5s" : "Go LIVE"}
+                  <Radio className={cn("h-6 w-6", live && !shared.paused && "live-dot rounded-full")} />
+                  {shared.paused ? "PAUSED" : live ? "LIVE — watching every 2.5s" : "GO LIVE"}
                 </button>
                 <button
                   onClick={() => shared.setPaused(!shared.paused)}
