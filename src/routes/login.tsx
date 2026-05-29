@@ -5,11 +5,26 @@ import { lovable } from "@/integrations/lovable/index";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Spade } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Gift, Spade } from "lucide-react";
+
+const HEARD_OPTIONS = [
+  "Friend / personal referral",
+  "Reddit",
+  "YouTube",
+  "Twitter / X",
+  "Twitch",
+  "Discord",
+  "Google search",
+  "Podcast",
+  "Other",
+];
 
 export const Route = createFileRoute("/login")({
   validateSearch: (s: Record<string, unknown>) => ({
     redirect: typeof s.redirect === "string" ? s.redirect : "/portal",
+    ref: typeof s.ref === "string" ? s.ref.toUpperCase().slice(0, 12) : undefined,
+    mode: s.mode === "signup" ? "signup" : undefined,
   }),
   component: Login,
 });
@@ -18,11 +33,13 @@ function Login() {
   const { user } = useAuth();
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup">(search.mode === "signup" || search.ref ? "signup" : "login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [howHeard, setHowHeard] = useState<string>("");
+  const [referredBy, setReferredBy] = useState<string>(search.ref ?? "");
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -41,7 +58,13 @@ function Login() {
           password,
           options: {
             emailRedirectTo: window.location.origin + "/portal",
-            data: { name, phone, display_name: name || email.split("@")[0] },
+            data: {
+              name,
+              phone,
+              display_name: name || email.split("@")[0],
+              how_heard: howHeard || null,
+              referred_by_code: referredBy.trim().toUpperCase() || null,
+            },
           },
         });
         if (error) throw error;
@@ -58,6 +81,13 @@ function Login() {
 
   const onGoogle = async () => {
     setErr(null);
+    // Stash referral code so we can attach it after OAuth round-trip (handled by portal).
+    if (mode === "signup" && referredBy) {
+      try { window.localStorage.setItem("paladin.pending_ref", referredBy.trim().toUpperCase()); } catch { /* ignore */ }
+    }
+    if (mode === "signup" && howHeard) {
+      try { window.localStorage.setItem("paladin.pending_how_heard", howHeard); } catch { /* ignore */ }
+    }
     const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/portal" });
     if (res.error) setErr(res.error.message);
   };
@@ -76,6 +106,18 @@ function Login() {
             {mode === "login" ? "Sign in to your portal" : "Create your account"}
           </p>
         </div>
+
+        {mode === "signup" && (
+          <div className="mb-4 rounded-xl border border-gold/40 bg-gold/5 p-3 text-center">
+            <div className="flex items-center justify-center gap-2 text-gold">
+              <Gift className="h-4 w-4" />
+              <span className="font-display text-sm font-bold uppercase tracking-wide">Refer a friend = $25</span>
+            </div>
+            <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+              Every friend you refer who pays for one month of Paladin earns you a <span className="text-gold font-semibold">$25 digital Amazon gift card</span>. Grab your unique referral link from your portal after sign-up.
+            </p>
+          </div>
+        )}
 
         <div className="space-y-4 rounded-2xl border border-border bg-card p-5">
           <Button onClick={onGoogle} variant="secondary" className="w-full">Continue with Google</Button>
@@ -101,6 +143,32 @@ function Login() {
               minLength={6}
               required
             />
+            {mode === "signup" && (
+              <>
+                <div>
+                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">How did you hear about us?</label>
+                  <Select value={howHeard} onValueChange={setHowHeard}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Pick one" /></SelectTrigger>
+                    <SelectContent>
+                      {HEARD_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Referral code (optional)</label>
+                  <Input
+                    placeholder="PALADIN-XXXXXXXX"
+                    value={referredBy}
+                    onChange={(e) => setReferredBy(e.target.value.toUpperCase())}
+                    maxLength={12}
+                    className="mt-1 font-data uppercase tracking-wider"
+                  />
+                  <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
+                    Leave blank if you don't have one — <span className="text-gold/90">referral codes can't be added after purchase.</span>
+                  </p>
+                </div>
+              </>
+            )}
             {err && <p className="font-data text-xs text-destructive">{err}</p>}
             <Button type="submit" disabled={busy} className="w-full font-bold">
               {busy ? "…" : mode === "login" ? "Sign in" : "Create account"}
