@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ScanEye, Radio, BarChart3, Mic, Smartphone, Puzzle, Check, ShieldAlert, Sparkles, Apple, ShoppingBag } from "lucide-react";
 import { PocketQR } from "@/components/PocketQRCard";
+import { useCart } from "@/lib/cart";
 import heroImg from "@/assets/paladin-hero.jpg";
 
 
