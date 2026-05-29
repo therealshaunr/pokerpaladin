@@ -90,7 +90,14 @@ function ProductPage() {
               <OptionRow label="Color" options={product.colors} value={color} onChange={setColor} />
             )}
             {product.sizes && (
-              <OptionRow label="Size" options={product.sizes} value={size} onChange={setSize} />
+              <>
+                <OptionRow label="Size" options={product.sizes} value={size} onChange={setSize} />
+                {upcharged && (
+                  <p className="mt-1 font-data text-[11px] text-gold">
+                    XL+ adds {OVERSIZE_UPCHARGE_PCT}% — applied at checkout.
+                  </p>
+                )}
+              </>
             )}
 
             {product.customizable && (
@@ -130,10 +137,21 @@ function ProductPage() {
             </Button>
 
             <p className="mt-5 text-[11px] text-muted-foreground">
-              Bundle 3+ items for <span className="text-gold font-semibold">10% off</span> · free shipping over <span className="text-gold font-semibold">$100</span>.
+              Bundle 3+ items for <span className="text-gold font-semibold">10% off</span> · USPS Standard <span className="text-gold font-semibold">free at $100+</span>.
             </p>
+
+            <div className="mt-4">
+              <VeteranBadge compact />
+            </div>
           </div>
         </div>
+
+        <SizeSubscribePrompt
+          open={subscribeOpen}
+          onClose={() => setSubscribeOpen(false)}
+          productName={product.name}
+          onChoose={() => { /* recurring stubbed until apparel-subscription prices wired */ }}
+        />
 
         <SiteFooter />
       </div>
