@@ -1,112 +1,65 @@
-# Next Phase: Mobile + AI Bot + Debug Tool + Simulator
+## 1. Fix the iOS/Android install links
 
-Four independent features, built in order so you can test each as it lands.
+**Bug:** `/pocket/install` and `/pocket` sit at the root, but the QR target `/pocket` requires auth, so visiting on a phone (or via the homepage buttons) triggers a redirect that the route renders as a hard `ErrorComponent` ("This page didn't load"). The root `ErrorComponent` is treating a `redirect()` throw as a fatal error.
 
----
+**Fix:**
+- Make `/pocket/install` 100% public (no auth, no redirects). It is currently public but its QR points at the protected `/pocket`. Add a second QR on the install page that opens `/login?redirect=/pocket` so first-time mobile users land on the login screen instead of a crash.
+- In `src/routes/__root.tsx` `ErrorComponent`, detect TanStack `redirect` objects (`error?.options?.to` or `isRedirect(error)`) and call `router.navigate(error.options)` instead of rendering the error UI. This stops `/pocket` from showing "This page didn't load" pre-login.
+- On the homepage, keep the two install buttons but point them directly at `/pocket/install` (already correct) — verify the link works after the error-boundary fix.
 
-## 1. Paladin Pocket (Mobile companion — Android + iOS)
+## 2. Live-play safety: stop auto-scanning a dead table
 
-**Approach: Installable PWA** (one codebase, both platforms, no app store wait, downloadable from the homepage today).
+**Problem:** GO LIVE keeps polling every 2.5s even when nobody is at the table, producing "ALL IN" calls into the void.
 
-- New route `/pocket` — mobile-optimized read-only view of the live Paladin session.
-- Pairing flow: portal generates a 6-digit code + QR → user scans on phone → phone calls `claimMobileLink` server fn → row in existing `mobile_links` table binds the device to the user's session.
-- Realtime: phone subscribes to a Supabase channel (`paladin:{userId}`) that the desktop app publishes equity / pot odds / decision / board to. No video — just the verdict card + table state (low bandwidth, works on cell data).
-- Web manifest + minimal service worker scoped to `/pocket` only (guarded so it never registers in the Lovable preview iframe — per PWA rules in the stack).
-- Homepage gets a "Get Paladin Pocket" section with two QR codes:
-  - **iOS QR** → opens `/pocket/install/ios` with Safari "Add to Home Screen" instructions + screenshots.
-  - **Android QR** → opens `/pocket/install/android` with Chrome "Install app" instructions.
-- Both install pages double as the landing for the QR so a single URL works.
-- Replace the current `/coming-soon` mobile card on the portal with a live "Pair phone" button.
+**Fix in `useSharedShare` + `GoLivePanel` + `ScanPanel`:**
+- Add a derived `tableActive` flag from the last vision read: active = `seats` has ≥ 2 non-empty seats with `hasCards`, OR `heroToAct` is true, OR `pot > bb`. Track `consecutiveEmptyReads`.
+- After **3 consecutive empty reads** (~7.5s on Pro, ~24s on Standard), auto-stop the scan loop, drop screen-share to **Standby**, and show a calm "Table idle — standby. Press Resume when you sit back down." card. No further AI calls until the user clicks Resume.
+- Hero-side guard in `Recommendation.tsx`: if `activeOpponents.length < 1` OR `hero.length < 2`, clear the verdict and show "Waiting for a live hand" instead of computing/broadcasting. Prevents the "go all in to an empty table" leak.
+- Add a **prominent pause toggle** on the GO LIVE panel: a big `Pause auto-scan` / `Resume` switch (separate from the Live button), so the user can break without disconnecting the share. Persist the paused state across re-renders.
 
-**Why PWA, not native**: native iOS/Android requires Apple Developer ($99/yr), Google Play ($25), build pipelines, and store review — none of which fit "downloadable from the homepage today". PWA installs in 2 taps, updates instantly when you ship, and uses the same auth/session as the web app. If you later want a store presence, the same code wraps in Capacitor.
+## 3. In-app layout & typography refinements
 
----
+In `src/routes/_authenticated.app.tsx` and children:
+- **Bump text up 2 sizes across the live app**: change base `text-[15px] md:text-[17px]` → `text-[17px] md:text-[19px]`; scale headings (`text-2xl md:text-3xl` → `text-3xl md:text-4xl`), and bump font-sizes in `Recommendation.tsx` (verdict from `text-3xl` → `text-5xl`, stats from `text-lg` → `text-2xl`, labels from `text-[10px]` → `text-xs`). Same bump in `GoLivePanel` and `ScanPanel`.
+- **Reorder the right column**: GO LIVE → **Your cards** (move card picker up directly under GO LIVE) → **Paladin Says** → Board picker. Currently Paladin Says sits right under GO LIVE and the card picker is at the bottom.
+- **Shift "Paladin Says" to the left**: keep the right column, but make the verdict block left-aligned within its panel (`text-left` instead of `text-center`) so it reads naturally beside the hero card chips.
+- **Center & justify the GO LIVE vs SCAN NOW chart** in `TierComparison.tsx`: wrap in `mx-auto` (already there) and add `text-justify` to the descriptive paragraph; ensure the comparison rows are visually centered on desktop (`sm:grid-cols-[1fr_140px_140px]` symmetric, content centered).
 
-## 2. Compatibility & Security Docs
+## 4. Paladin AI Bot (one conversation, no history)
 
-New route `/help/compatibility` with three tabs:
+**Decision:** single conversation per session, no persistence (per user choice). Each browser tab gets a fresh chat; nothing stored in DB or localStorage.
 
-- **macOS** — Screen Recording permission (System Settings → Privacy & Security → Screen Recording → enable browser), camera/mic prompts, Safari "Allow on Every Visit", popup blocker exceptions.
-- **Windows 11** — Edge/Chrome screen-share consent, Defender SmartScreen, "Choose what to share" dialog walkthrough, notification permissions.
-- **Mobile** — iOS Safari "Add to Home Screen", Android install prompt, background-tab throttling notes.
+**Build:**
+- Install AI Elements: `bun x ai-elements@latest add conversation message prompt-input shimmer`.
+- Create server route `src/routes/api/bot.ts` using `streamText` + the Lovable AI Gateway helper (`google/gemini-3-flash-preview`). System prompt includes: Paladin tier matrix, pricing, compatibility tips (macOS/Win/Mobile), refund policy, how SCAN NOW vs GO LIVE works, links to `/user-guide`, `/faq`, `/compatibility`, `/pocket/install`.
+- Add `src/lib/ai-gateway.server.ts` (the canonical helper) if not present.
+- Tools (lightweight, all read-only — no `needsApproval`):
+  - `getMyPlan` — middleware-auth wrapper around `subscriptions` SELECT, returns tier/status.
+  - `linkToCompatibilityDoc({ os })` — returns one of three help anchors.
+  - `linkToPocketInstall()` — returns `/pocket/install`.
+- Frontend: `src/components/PaladinBot.tsx` — floating button (bottom-right) with `Conversation` + `MessageContent` + `MessageResponse` + `PromptInput` + `Shimmer` "Thinking…". Mount in `__root.tsx` inside `AuthProvider` so it's available on every page (hide on `/pocket*` to keep mobile UI clean).
+- Use a generated mini staff/sigil icon as the bot identity (not Sparkles). Reuse `paladin-icon-512.png` for the avatar.
 
-Each tab: numbered steps, screenshots (generated), and a "Still stuck? Ask Paladin Bot" CTA that opens the AI bot pre-loaded with that context.
+## 5. Technical notes
 
-Link from: portal header (help icon), Go Live panel error states, and the Paladin Bot itself.
+- The auth gate currently fires through `_authenticated.tsx` `beforeLoad` — verify the redirect helper there is reachable and the root error boundary respects it (`isRedirect`).
+- `useSharedShare.runAnalyze` already returns the parsed result; refactor it to also set a shared `lastResult` state so `tableActive` can be derived in one place and consumed by both panels.
+- AI bot streaming route lives at `/api/bot` (NOT `/api/public/bot` — keep it behind the normal auth surface to discourage abuse; pass the user's session via the existing AI Elements transport).
+- No DB migration needed for this turn (bot has no history; pause state is in-memory).
 
----
+## Files touched
 
-## 3. Paladin AI Bot
+- `src/routes/__root.tsx` — error boundary + bot mount
+- `src/routes/pocket.install.tsx` — extra `/login?redirect=/pocket` QR
+- `src/components/poker/GoLivePanel.tsx` — pause toggle, standby logic, idle detection
+- `src/components/poker/ScanPanel.tsx` — share standby on idle
+- `src/components/poker/Recommendation.tsx` — empty-table guard, broadcast guard, text-size bumps, left-align
+- `src/components/poker/TierComparison.tsx` — center + justify
+- `src/routes/_authenticated.app.tsx` — text scale, column reorder
+- `src/lib/ai-gateway.server.ts` — new (gateway helper)
+- `src/routes/api/bot.ts` — new (streaming chat route)
+- `src/components/PaladinBot.tsx` — new (floating bot)
+- `src/components/ai-elements/*` — installed via AI Elements CLI
+- `package.json` / `bun.lock` — `ai`, `@ai-sdk/openai-compatible`, AI Elements deps
 
-Floating chat widget available everywhere when signed in (portal, /app, /shop, /help).
-
-**Capabilities**:
-- Answers questions about the site (pricing, plans, refund policy, how Go Live vs Scan differ).
-- Quick poker reference: rules + hand rankings for NLHE, PLO, Stud, Razz, etc. (pulled from `src/lib/poker/types.ts` variants).
-- Troubleshooting: walks user through compatibility doc steps interactively, can suggest opening the debug tool (see #4) and reading captured logs.
-- Has the user's tenant context: current plan, recent scan events, recent support tickets — so it can say "I see your last Go Live session ended 3 min ago with an error, here's likely cause."
-
-**Tech**:
-- New server fn `chatWithPaladinBot` using AI SDK + Lovable AI Gateway (`google/gemini-3-flash-preview` default — cheap + fast, matches your credit concern).
-- System prompt bundles: site copy summary, poker rules cheatsheets, compatibility steps, and user context fetched server-side.
-- Tools the bot can call: `getMyPlan`, `getMyRecentErrors`, `openDebugCapture`, `linkToCompatibilityDoc(os)`.
-- UI: `<PaladinBot />` widget in `__root.tsx`, hidden on landing/login. Streamed responses, markdown rendering.
-
----
-
-## 4. Debug Capture Tool
-
-New portal card "Run diagnostics". When launched:
-
-- Opens `/portal/debug` with a "Start capture" button.
-- Captures (client-side, scoped to current tab):
-  - Browser + OS + screen resolution + devicePixelRatio
-  - Active plan, role, user id
-  - Last 200 console log lines (intercepted via `console.*` wrapper)
-  - Last 50 network requests (fetch/xhr URLs + status, no bodies)
-  - Last 20 scan_events from DB
-  - Active permissions (camera, mic, display-capture state)
-- User clicks "Reproduce issue" → app opens in a new tab with capture still running → user does the broken thing → returns and clicks "Stop & send".
-- POSTs the bundle to `submitDebugCapture` server fn → stored in new `debug_captures` table → linked to a support ticket → admin sees it in `SupportInbox`.
-- Bot can read the capture and explain it.
-
----
-
-## 5. NL Hold'em Simulator ("Take it for a drive")
-
-New route `/simulator` linked from the landing page hero and portal.
-
-**Setup screen**: variant (locked to NLHE for v1), # players 2–8, starting stack, your name. Big "Deal" button.
-
-**Table**:
-- 8 seats around an oval felt (reuses `PokerTable` styling). Seat 1 = hero, bottom-right, cards face-up.
-- Other seats: face-down cards, AI opponents with simple ranges (tight/loose mix).
-- Action buttons for hero only: **Check / Fold / Call / Raise** with a single dollar input (no preset sizings).
-- Hands play out preflop → flop → turn → river → showdown using existing `engine.ts` evaluator. Opponents act with basic equity-based logic.
-- Pot, stacks, dealer button update per hand.
-
-**Paladin toggle** (top-right of table):
-- OFF by default. Toggling ON shows: "⚠️ Simulation mode — full Paladin selects your live monitor."
-- When ON, a slim panel appears with live equity %, pot odds %, EV, and decision verdict — recalculated every street.
-- Calculations use the same `strategy.ts` the real app uses, so the user sees the actual product brain working on their actual cards.
-- Code obfuscation: simulator-only strategy calls go through a wrapper that strips internals (no rationale source, no weights) — just outputs. The full `strategy.ts` is never bundled into the simulator chunk; the wrapper lives in `src/lib/sim/paladin-lite.ts` and only exposes `evaluate(hero, board, pot, toCall) → { equity, potOdds, ev, decision }`.
-
----
-
-## Build Order (so you can test as we go)
-
-1. **Simulator** (~30 min) — pure frontend, no infra. Instant gratification + demo asset.
-2. **Compatibility docs** (~15 min) — static content, helps right now.
-3. **Paladin Pocket PWA + QR pairing** (~45 min) — needs `mobile_links` already exists, add 1 migration for `device_label`.
-4. **Debug capture tool** (~30 min) — new `debug_captures` table + UI.
-5. **Paladin AI Bot** (~45 min) — last because it consumes the most credits and benefits from having the docs + debug tool to reference.
-
-## Technical Notes
-
-- All new routes follow `createFileRoute` dot-naming.
-- Bot uses AI SDK `streamText` + `useChat` per stack convention; costs ~$0.0001 per short message on Gemini Flash.
-- PWA service worker is guarded: only registers on `pokerpaladin.lovable.app` + custom domain, never in preview iframe.
-- Simulator runs 100% client-side — zero server cost.
-- One Supabase migration total (debug_captures + mobile_links.device_label).
-
-Approve and I'll build in the listed order, pausing after the simulator so you can take it for a drive.
+After this turn: the install links open without a crash, GO LIVE can't scream at an empty table, you have a real pause button, the app text is ~2 sizes larger, the right column reads Cards-above-Paladin, the comparison chart is centered, and the Paladin Bot is live across the site.
