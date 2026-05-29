@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { ScanEye, Radio, BarChart3, Mic, Smartphone, Puzzle, Check, ShieldAlert, Sparkles } from "lucide-react";
+import { ScanEye, Radio, BarChart3, Mic, Smartphone, Puzzle, Check, ShieldAlert, Sparkles, Apple } from "lucide-react";
+import { PocketQR } from "@/components/PocketQRCard";
 import heroImg from "@/assets/paladin-hero.jpg";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -101,7 +103,31 @@ function Landing() {
           </div>
         </section>
 
-        {/* TRUST */}
+        {/* PALADIN POCKET — Mobile companion */}
+        <section className="arcane-border my-10 overflow-hidden p-6 md:p-8 glow-wizard">
+          <div className="grid items-center gap-6 md:grid-cols-[1fr_auto]">
+            <div>
+              <p className="font-data text-xs uppercase tracking-[0.3em] text-gold">New · live</p>
+              <h2 className="mt-2 font-display text-3xl font-black md:text-4xl">
+                Get <span className="text-wizard">Paladin Pocket</span> on your phone.
+              </h2>
+              <p className="mt-3 max-w-xl text-sm text-muted-foreground md:text-base">
+                A glance-only mirror of every verdict the Paladin produces — equity, pot odds, EV, decision, suggested size — pushed to your phone in real time. Install in 10 seconds, no app store required.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link to="/pocket/install"><Button size="lg" className="gap-2"><Smartphone className="h-4 w-4" /> Install on Android</Button></Link>
+                <Link to="/pocket/install"><Button size="lg" variant="secondary" className="gap-2"><Apple className="h-4 w-4" /> Install on iPhone</Button></Link>
+              </div>
+              <p className="mt-3 text-xs text-muted-foreground">Both buttons go to the same install guide — Pocket is a single PWA that works on both platforms.</p>
+            </div>
+            <div className="flex flex-col items-center">
+              <PocketQR url={typeof window !== "undefined" ? `${window.location.origin}/pocket/install` : ""} size={180} />
+              <p className="mt-2 font-data text-[10px] uppercase tracking-[0.3em] text-gold">Scan with your phone</p>
+            </div>
+          </div>
+        </section>
+
+
         <section className="arcane-border my-10 p-6 md:p-8">
           <div className="flex items-start gap-4">
             <Sparkles className="h-6 w-6 shrink-0 text-gold" />
