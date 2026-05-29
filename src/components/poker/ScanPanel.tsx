@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { SharedShare } from "./GoLivePanel";
 import { Button } from "@/components/ui/button";
-import { ScanEye } from "lucide-react";
+import { ScanEye, MonitorUp, X } from "lucide-react";
 
 const STANDARD_AUTOSCAN_MS = 8000;
 
@@ -22,14 +22,12 @@ export function ScanPanel({ shared, tier }: Props) {
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 font-display text-base font-bold">
-          <ScanEye className="h-5 w-5 text-matrix" /> SCAN NOW · Analyze once
-        </div>
+      <div className="flex items-center justify-center gap-2 font-display text-base font-bold text-center">
+        <ScanEye className="h-5 w-5 text-matrix" /> SCAN NOW · Analyze once
+      </div>
+      <div className="mt-1 text-center">
         {tier === "standard" && shared.sharing && !blocked && (
-          <span className="font-data text-xs uppercase tracking-wider text-matrix">
-            auto · every 8s
-          </span>
+          <span className="font-data text-xs uppercase tracking-wider text-matrix">auto · every 8s</span>
         )}
         {blocked && (
           <span className="font-data text-xs uppercase tracking-wider text-gold">
@@ -38,18 +36,38 @@ export function ScanPanel({ shared, tier }: Props) {
         )}
       </div>
 
-      <Button
-        onClick={() => shared.runAnalyze("manual")}
-        disabled={shared.busy || !shared.sharing}
-        className="mt-3 w-full gap-2 font-bold text-base"
-      >
-        <ScanEye className="h-5 w-5" />
-        {shared.busy ? "Analyzing…" : shared.sharing ? "SCAN NOW" : "Connect screen first ↑"}
-      </Button>
+      {/* Single screen-share entry point for the whole app */}
+      <video
+        ref={shared.videoRef}
+        muted
+        playsInline
+        className="mt-3 aspect-video w-full rounded-md border border-border bg-black/40 object-contain"
+        style={{ display: shared.sharing ? "block" : "none" }}
+      />
+
+      {!shared.sharing ? (
+        <Button onClick={shared.startShare} className="mt-3 w-full gap-2 font-bold text-base justify-center">
+          <MonitorUp className="h-5 w-5" /> Connect screen
+        </Button>
+      ) : (
+        <div className="mt-3 flex gap-2">
+          <Button
+            onClick={() => shared.runAnalyze("manual")}
+            disabled={shared.busy}
+            className="flex-1 gap-2 font-bold text-base justify-center"
+          >
+            <ScanEye className="h-5 w-5" />
+            {shared.busy ? "Analyzing…" : "SCAN NOW"}
+          </Button>
+          <Button onClick={shared.stopShare} variant="secondary" size="icon" aria-label="Disconnect screen">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
 
       {!shared.sharing && (
-        <p className="mt-2 text-sm leading-snug text-muted-foreground/70">
-          Connect your poker screen in the GO LIVE panel — the same share powers both. We only spend AI when you ask, or once every 8s on Standard.
+        <p className="mt-2 text-center text-sm leading-snug text-muted-foreground/70">
+          One screen connection powers SCAN NOW <em>and</em> GO LIVE. We only spend AI when you ask, or once every 8s on Standard.
         </p>
       )}
     </div>
